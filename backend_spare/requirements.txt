@@ -1,0 +1,20 @@
+# Claude Agent SDK
+claude-agent-sdk
+
+# Configuration
+pyyaml
+
+# Rich terminal UI
+rich
+
+# Async support
+anyio
+
+# Optional: Web framework if we need HTTP endpoints
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database (for direct queries if needed)
+psycopg2-binary
+sqlalchemy

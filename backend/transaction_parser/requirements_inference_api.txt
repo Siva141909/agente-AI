@@ -1,0 +1,19 @@
+# Transaction Parser Requirements (Inference API Version)
+# Install with: pip install -r requirements_inference_api.txt
+# 
+# This version uses Hugging Face Inference API - NO PyTorch needed!
+# Perfect for avoiding DLL issues on Windows.
+
+# Core dependencies
+requests>=2.31.0
+Pillow>=10.0.0
+
+# API Server (optional, only if using simple_api_server_inference.py)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# That's it! No PyTorch, no transformers, no heavy dependencies.
+# All models run on Hugging Face servers via API.
+
+

@@ -1,0 +1,130 @@
+"""
+Simple API Server for Transaction Parser (Inference API Version)
+================================================================
+
+This version uses Hugging Face Inference API - no PyTorch needed!
+Perfect for avoiding DLL issues on Windows.
+
+Usage:
+    uvicorn simple_api_server_inference:app --reload --port 8000
+"""
+
+import os
+import tempfile
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from transaction_parser_inference_api import TransactionParser
+import uvicorn
+
+app = FastAPI()
+
+# Enable CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Add your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize parser (uses Inference API, no local models)
+parser = TransactionParser()
+
+@app.get("/")
+def root():
+    return {
+        "message": "Transaction Parser API (Inference API Version)",
+        "note": "Using Hugging Face Inference API - no local PyTorch needed!",
+        "endpoints": {
+            "parse_image": "/api/parse-image",
+            "parse_voice": "/api/parse-voice"
+        }
+    }
+
+@app.post("/api/parse-image")
+async def parse_image(file: UploadFile = File(...)):
+    """
+    Parse an image (receipt/bill) to extract transaction details.
+    
+    Accepts: JPEG, PNG, BMP, TIFF
+    Returns: JSON with transaction fields
+    """
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Create temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.filename.split('.')[-1]}") as tmp_file:
+        tmp_path = tmp_file.name
+        
+        try:
+            # Save uploaded file
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file.flush()
+            
+            # Parse image
+            result = parser.parse_image(tmp_path)
+            
+            return result
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+        
+        finally:
+            # Clean up temporary file
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+@app.post("/api/parse-voice")
+async def parse_voice(file: UploadFile = File(...)):
+    """
+    Parse a voice recording to extract transaction details.
+    
+    Accepts: WAV, MP3, FLAC
+    Returns: JSON with transaction fields
+    """
+    # Validate file type
+    valid_audio_types = ["audio/wav", "audio/mpeg", "audio/mp3", "audio/flac", "audio/x-wav"]
+    if not file.content_type or file.content_type not in valid_audio_types:
+        raise HTTPException(status_code=400, detail="File must be an audio file (WAV, MP3, FLAC)")
+    
+    # Create temporary file
+    file_ext = file.filename.split('.')[-1] if '.' in file.filename else 'wav'
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_ext}") as tmp_file:
+        tmp_path = tmp_file.name
+        
+        try:
+            # Save uploaded file
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file.flush()
+            
+            # Parse audio
+            result = parser.parse_voice(tmp_path)
+            
+            return result
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error processing audio: {str(e)}")
+        
+        finally:
+            # Clean up temporary file
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("Starting Transaction Parser API Server (Inference API)")
+    print("="*60)
+    print("\n✅ No PyTorch needed - using Hugging Face Inference API!")
+    print("\nEndpoints:")
+    print("  POST /api/parse-image - Parse receipt/bill images")
+    print("  POST /api/parse-voice - Parse voice recordings")
+    print("\nServer will be available at: http://localhost:8000")
+    print("API docs at: http://localhost:8000/docs")
+    print("\n" + "-"*60 + "\n")
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+
+
