@@ -7,6 +7,9 @@
 [![AI](https://img.shields.io/badge/AI-Claude%20%2B%20Gemini-4285F4)](https://anthropic.com)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL-336791)](https://www.postgresql.org/)
 
+🌐 **Live Demo**: https://kamai-quadrabucks.vercel.app/
+
+
 **Empowering 230 Million Gig Workers with AI-Driven Financial Stability**
 
 [Quick Start](#quick-start) • [Features](#features) • [Documentation](docs/) • [Architecture](#architecture)
