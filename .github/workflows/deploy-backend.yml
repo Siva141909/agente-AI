@@ -26,14 +26,17 @@ jobs:
       - name: Set Railway environment variables
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
           railway variables set \
             SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
             SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             ALLOWED_ORIGINS="${{ secrets.VITE_VERCEL_URL }}" \
-            --service backend
+            --service backend \
+            --project ${{ secrets.RAILWAY_PROJECT_ID }}
 
       - name: Deploy
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service backend --detach
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: railway up --service backend --detach --project ${{ secrets.RAILWAY_PROJECT_ID }}
