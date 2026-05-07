@@ -1,0 +1,390 @@
+# ==========================================
+# AGENTE AI - Root .gitignore
+# ==========================================
+# Generated for: Full-stack AI Financial Platform
+# Backend: Python/FastAPI + AI Agents
+# Frontend: React/TypeScript + Vite
+# ==========================================
+
+# ==========================================
+# 🔴 CRITICAL - Security Sensitive Files
+# ==========================================
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+*.env
+
+# API Keys & Credentials
+.mcp.json
+**/mcp.json
+**/.mcp.json
+secrets.yaml
+credentials.json
+service-account.json
+
+# ==========================================
+# 🐍 Python
+# ==========================================
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv
+.ENV/
+backend_spare/venv/
+*/venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyo
+*.pyd
+.pyc
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / Coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+pytest_cache/
+test-results/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# PyCharm
+.idea/
+*.iml
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# ==========================================
+# 📦 Node.js / Frontend
+# ==========================================
+# Dependencies
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build Output
+dist/
+dist-ssr/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# Vite Cache
+.vite/
+frontend/.vite/
+
+# Editor directories
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==========================================
+# 🤖 AI/ML Models & Data
+# ==========================================
+# Hugging Face Cache
+.cache/
+huggingface/
+transformers_cache/
+.transformers_cache/
+
+# PyTorch Models
+*.pt
+*.pth
+*.ckpt
+checkpoint/
+checkpoints/
+
+# Large Model Files (uncomment if you don't want to track them)
+# *.bin
+# *.safetensors
+# model.bin
+# pytorch_model.bin
+
+# Training Data
+data/
+datasets/
+*.csv
+*.tsv
+*.parquet
+
+# ==========================================
+# 📝 Logs
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log.*
+log-*.txt
+
+# ==========================================
+# 🗄️ Database
+# ==========================================
+# SQLite
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# PostgreSQL
+*.sql.backup
+*.dump
+pg_data/
+
+# ==========================================
+# 🖥️ OS & System Files
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+nul
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================================
+# 🔧 Editor & IDE
+# ==========================================
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+*~
+tags
+[._]*.un~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ==========================================
+# 🏗️ Build & Deployment
+# ==========================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Serverless
+.serverless/
+
+# ==========================================
+# 📊 Analytics & Monitoring
+# ==========================================
+# Sentry
+.sentryclirc
+
+# Application Insights
+ApplicationInsights.config
+
+# ==========================================
+# 🧪 Testing
+# ==========================================
+# Test Coverage
+coverage/
+.nyc_output/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ==========================================
+# 📱 Mobile (Future)
+# ==========================================
+# React Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.expo/
+.expo-shared/
+
+# ==========================================
+# 🔒 Security (Never Commit)
+# ==========================================
+# Private Keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+id_rsa
+id_rsa.pub
+
+# Secrets
+secrets/
+*.secret
+*.secrets
+
+# ==========================================
+# 📦 Package Managers
+# ==========================================
+# Poetry
+poetry.lock
+
+# Pipenv
+Pipfile.lock
+
+# ==========================================
+# 🎯 Project Specific
+# ==========================================
+# Temporary Files
+temp/
+tmp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# User Uploaded Content
+uploads/
+media/
+
+# Claude Code (keep local settings only)
+.claude/settings.local.json
+
+# ==========================================
+# ✅ Files to KEEP (Explicitly Track)
+# ==========================================
+# These are important and should be tracked:
+# - README.md
+# - requirements.txt
+# - package.json
+# - tsconfig.json
+# - vite.config.ts
+# - tailwind.config.ts
+# - agent_config.yaml
+# - .gitignore files
+# - Documentation (docs/)

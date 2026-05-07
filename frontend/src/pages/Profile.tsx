@@ -1,0 +1,384 @@
+import { useState, useEffect } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { useNavigate } from "react-router-dom";
+import { Home } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Save } from "lucide-react";
+import { motion } from "framer-motion";
+import db from "@/services/database";
+import { toast } from "sonner";
+import PageIntro from "@/components/PageIntro";
+import HelpTooltip from "@/components/HelpTooltip";
+
+const Profile = () => {
+  const { user, logout } = useApp();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    // Basic Info
+    full_name: "",
+    phone_number: "",
+    email: "",
+    date_of_birth: "",
+    preferred_language: "en",
+    occupation: "",
+    city: "",
+    state: "",
+    pin_code: "",
+    // Financial Profile
+    monthly_income_min: "",
+    monthly_income_max: "",
+    monthly_expenses_avg: "",
+    emergency_fund_target: "",
+    current_emergency_fund: "",
+    risk_tolerance: "moderate",
+    dependents: 0,
+    income_sources: [] as any[],
+    debt_obligations: [] as any[],
+  });
+
+  useEffect(() => {
+    const userId = localStorage.getItem('user_id');
+    if (!user && !userId) {
+    navigate("/signup");
+      return;
+    }
+    // Load profile if user exists OR if user_id exists (for testing)
+    if (user || userId) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      setIsLoading(true);
+      const [userData, profileData] = await Promise.all([
+        db.users.getMe(),
+        db.users.getProfile().catch(() => null),
+      ]);
+      
+      setFormData({
+        full_name: userData.full_name || "",
+        phone_number: userData.phone_number || "",
+        email: userData.email || "",
+        date_of_birth: userData.date_of_birth || "",
+        preferred_language: userData.preferred_language || "en",
+        occupation: userData.occupation || "",
+        city: userData.city || "",
+        state: userData.state || "",
+        pin_code: userData.pin_code || "",
+        monthly_income_min: profileData?.monthly_income_min?.toString() || "",
+        monthly_income_max: profileData?.monthly_income_max?.toString() || "",
+        monthly_expenses_avg: profileData?.monthly_expenses_avg?.toString() || "",
+        emergency_fund_target: profileData?.emergency_fund_target?.toString() || "",
+        current_emergency_fund: profileData?.current_emergency_fund?.toString() || "",
+        risk_tolerance: profileData?.risk_tolerance || "moderate",
+        dependents: profileData?.dependents || 0,
+        income_sources: profileData?.income_sources || [],
+        debt_obligations: profileData?.debt_obligations || [],
+      });
+      
+      setProfile(profileData);
+    } catch (error) {
+      console.error("Failed to load profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await Promise.all([
+        db.users.updateMe({
+          full_name: formData.full_name,
+          email: formData.email || undefined,
+          date_of_birth: formData.date_of_birth || undefined,
+          preferred_language: formData.preferred_language,
+          occupation: formData.occupation,
+          city: formData.city,
+          state: formData.state,
+          pin_code: formData.pin_code,
+        }),
+        db.users.updateProfile({
+          monthly_income_min: formData.monthly_income_min ? parseFloat(formData.monthly_income_min) : undefined,
+          monthly_income_max: formData.monthly_income_max ? parseFloat(formData.monthly_income_max) : undefined,
+          monthly_expenses_avg: formData.monthly_expenses_avg ? parseFloat(formData.monthly_expenses_avg) : undefined,
+          emergency_fund_target: formData.emergency_fund_target ? parseFloat(formData.emergency_fund_target) : undefined,
+          current_emergency_fund: formData.current_emergency_fund ? parseFloat(formData.current_emergency_fund) : undefined,
+          risk_tolerance: formData.risk_tolerance as any,
+          dependents: formData.dependents,
+          income_sources: formData.income_sources,
+          debt_obligations: formData.debt_obligations,
+        }),
+      ]);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} title="Back to Home">
+            <Home className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Profile</h1>
+            <p className="text-muted-foreground">Manage your personal and financial information</p>
+          </div>
+          </div>
+        <Button onClick={handleSave} disabled={isSaving}>
+          <Save className="w-4 h-4 mr-2" />
+          {isSaving ? "Saving..." : "Save Changes"}
+        </Button>
+          </div>
+
+      <PageIntro
+        title="What is this page?"
+        description="This page stores your personal and financial details, like income range, expenses, dependents, and linked bank accounts."
+      />
+
+      {/* Basic Info */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Full Name *</Label>
+            <Input
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            />
+            </div>
+          <div className="space-y-2">
+            <Label>Phone Number *</Label>
+            <Input
+              value={formData.phone_number}
+              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+              disabled
+            />
+            </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            </div>
+          <div className="space-y-2">
+            <Label>Date of Birth</Label>
+            <Input
+              type="date"
+              value={formData.date_of_birth}
+              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+            />
+                </div>
+          <div className="space-y-2">
+            <Label>Preferred Language</Label>
+            <Select
+              value={formData.preferred_language}
+              onValueChange={(v) => setFormData({ ...formData, preferred_language: v })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="hi">Hindi</SelectItem>
+                <SelectItem value="mr">Marathi</SelectItem>
+                <SelectItem value="bn">Bengali</SelectItem>
+                <SelectItem value="ta">Tamil</SelectItem>
+              </SelectContent>
+            </Select>
+              </div>
+          <div className="space-y-2">
+            <Label>Occupation</Label>
+            <Input
+              value={formData.occupation}
+              onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+            />
+                </div>
+          <div className="space-y-2">
+            <Label>City</Label>
+            <Input
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+            />
+              </div>
+          <div className="space-y-2">
+            <Label>State</Label>
+            <Input
+              value={formData.state}
+              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+            />
+                </div>
+          <div className="space-y-2">
+            <Label>PIN Code</Label>
+            <Input
+              value={formData.pin_code}
+              onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
+            />
+              </div>
+            </div>
+          </Card>
+
+      {/* Financial Profile */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Financial Profile</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Monthly Income (Min)</Label>
+            <Input
+              type="number"
+              value={formData.monthly_income_min}
+              onChange={(e) => setFormData({ ...formData, monthly_income_min: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Monthly Income (Max)</Label>
+            <Input
+              type="number"
+              value={formData.monthly_income_max}
+              onChange={(e) => setFormData({ ...formData, monthly_income_max: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Average Monthly Expenses</Label>
+            <Input
+              type="number"
+              value={formData.monthly_expenses_avg}
+              onChange={(e) => setFormData({ ...formData, monthly_expenses_avg: e.target.value })}
+            />
+              </div>
+          <div className="space-y-2">
+            <Label>Emergency Fund Target</Label>
+            <Input
+              type="number"
+              value={formData.emergency_fund_target}
+              onChange={(e) => setFormData({ ...formData, emergency_fund_target: e.target.value })}
+            />
+              </div>
+          <div className="space-y-2">
+            <Label>Current Emergency Fund</Label>
+            <Input
+              type="number"
+              value={formData.current_emergency_fund}
+              onChange={(e) => setFormData({ ...formData, current_emergency_fund: e.target.value })}
+            />
+            </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label>Risk Tolerance</Label>
+              <HelpTooltip text="How comfortable you are with taking financial risk: low, moderate, or high." />
+              </div>
+            <Select
+              value={formData.risk_tolerance}
+              onValueChange={(v) => setFormData({ ...formData, risk_tolerance: v })}
+            >
+              <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="moderate">Moderate</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label>Dependents</Label>
+              <HelpTooltip text="Number of people who depend on your income, like family members." />
+            </div>
+            <Input
+              type="number"
+              value={formData.dependents}
+              onChange={(e) => setFormData({ ...formData, dependents: parseInt(e.target.value) || 0 })}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Security */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Security</h3>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Password change logic will be implemented here
+            toast.info("Password change feature coming soon");
+          }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="current-password">Current Password</Label>
+            <Input 
+              id="current-password"
+              type="password" 
+              autoComplete="current-password"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-password">New Password</Label>
+            <Input 
+              id="new-password"
+              type="password" 
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirm New Password</Label>
+            <Input 
+              id="confirm-password"
+              type="password" 
+              autoComplete="new-password"
+            />
+          </div>
+          <Button type="submit" variant="outline">Change Password</Button>
+        </form>
+          </Card>
+
+      {/* Logout */}
+      <Card className="p-6">
+          <Button
+          variant="destructive"
+          className="w-full"
+          onClick={() => {
+            logout();
+            navigate("/");
+          }}
+        >
+            Logout
+          </Button>
+      </Card>
+    </div>
+  );
+};
+
+export default Profile;
