@@ -16,7 +16,7 @@ class ApplicationCreate(BaseModel):
     application_notes: Optional[str] = None
 
 
-@router.get("/")
+@router.get("")
 async def list_schemes(current: CurrentUser = Depends(get_current_user)):
     # Schemes are public — use admin client (no RLS restriction on this table)
     return get_admin_supabase().table("government_schemes").select("*").eq("is_active", True).order("scheme_name").execute().data or []

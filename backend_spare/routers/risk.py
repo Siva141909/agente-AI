@@ -16,7 +16,7 @@ async def get_latest(current: CurrentUser = Depends(get_current_user)):
     return result.data[0] if result.data else None
 
 
-@router.get("/")
+@router.get("")
 async def list_all(current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     return (

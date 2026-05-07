@@ -13,7 +13,7 @@ class RecommendationUpdate(BaseModel):
     user_feedback: Optional[str] = None
 
 
-@router.get("/")
+@router.get("")
 async def list_recommendations(
     status: Optional[str] = None,
     priority: Optional[str] = None,

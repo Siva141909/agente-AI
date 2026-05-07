@@ -6,7 +6,7 @@ from auth_middleware import get_current_user, CurrentUser
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
 
-@router.get("/")
+@router.get("")
 async def get_stats(current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     today = datetime.utcnow().strftime("%Y-%m-%d")

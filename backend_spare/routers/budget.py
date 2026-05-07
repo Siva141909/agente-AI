@@ -21,7 +21,7 @@ class BudgetCreate(BaseModel):
     is_active: Optional[bool] = True
 
 
-@router.get("/")
+@router.get("")
 async def list_budgets(current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     return sb.table("budgets").select("*").eq("user_id", current.user_id).order("created_at", desc=True).execute().data or []
@@ -40,7 +40,7 @@ async def get_active(current: CurrentUser = Depends(get_current_user)):
     return result.data[0] if result.data else None
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_budget(data: BudgetCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     record = {"user_id": current.user_id, **data.model_dump(), "confidence_score": 0.8}

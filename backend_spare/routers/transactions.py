@@ -25,7 +25,7 @@ class TransactionCreate(BaseModel):
     tags: Optional[list[str]] = None
 
 
-@router.get("/")
+@router.get("")
 async def list_transactions(
     limit: int = Query(50, le=200),
     offset: int = 0,
@@ -45,7 +45,7 @@ async def list_transactions(
     return q.order("transaction_date", desc=True).limit(limit).offset(offset).execute().data or []
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_transaction(data: TransactionCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     now = datetime.utcnow()

@@ -17,7 +17,7 @@ class ActionCreate(BaseModel):
     status: Optional[str] = "pending"
 
 
-@router.get("/")
+@router.get("")
 async def list_actions(
     status: Optional[str] = None,
     current: CurrentUser = Depends(get_current_user),
@@ -29,7 +29,7 @@ async def list_actions(
     return q.execute().data or []
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_action(data: ActionCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     today = datetime.utcnow().strftime("%Y-%m-%d")

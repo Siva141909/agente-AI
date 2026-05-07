@@ -17,7 +17,7 @@ class TaxRecordCreate(BaseModel):
     acknowledgement_number: Optional[str] = None
 
 
-@router.get("/")
+@router.get("")
 async def list_records(current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     return sb.table("tax_records").select("*").eq("user_id", current.user_id).order("financial_year", desc=True).execute().data or []
@@ -30,7 +30,7 @@ async def get_record(financial_year: str, current: CurrentUser = Depends(get_cur
     return result.data
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_record(data: TaxRecordCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     record = {
