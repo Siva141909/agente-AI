@@ -43,6 +43,6 @@ async def get_profile(current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     result = (
         sb.table("user_profiles").select("*")
-        .eq("user_id", current.user_id).single().execute()
+        .eq("user_id", current.user_id).execute()
     )
-    return result.data or {}
+    return result.data[0] if result.data else {}

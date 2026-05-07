@@ -78,7 +78,7 @@ export const api = {
       const qs = q.toString();
       return get<any[]>(`/api/transactions${qs ? "?" + qs : ""}`);
     },
-    create: (data: object) => post<any>("/api/transactions/", data),
+    create: (data: object) => post<any>("/api/transactions", data),
     delete: (id: string) => del<void>(`/api/transactions/${id}`),
     summary: (params?: { from_date?: string; to_date?: string }) => {
       const q = new URLSearchParams();
@@ -105,44 +105,44 @@ export const api = {
 
   // Stats
   stats: {
-    get: () => get<any>("/api/stats/"),
+    get: () => get<any>("/api/stats"),
   },
 
   // Budget
   budget: {
-    list: () => get<any[]>("/api/budget/"),
+    list: () => get<any[]>("/api/budget"),
     active: () => get<any | null>("/api/budget/active"),
-    create: (data: object) => post<any>("/api/budget/", data),
+    create: (data: object) => post<any>("/api/budget", data),
     update: (id: string, data: object) => put<any>(`/api/budget/${id}`, data),
   },
 
   // Government schemes
   schemes: {
-    list: () => get<any[]>("/api/schemes/"),
+    list: () => get<any[]>("/api/schemes"),
     applications: () => get<any[]>("/api/schemes/applications"),
     applyToScheme: (data: object) => post<any>("/api/schemes/applications", data),
   },
 
   // Tax
   tax: {
-    list: () => get<any[]>("/api/tax/"),
+    list: () => get<any[]>("/api/tax"),
     byYear: (year: string) => get<any>(`/api/tax/${year}`),
-    create: (data: object) => post<any>("/api/tax/", data),
+    create: (data: object) => post<any>("/api/tax", data),
   },
 
   // Risk
   risk: {
     latest: () => get<any | null>("/api/risk/latest"),
-    list: () => get<any[]>("/api/risk/"),
+    list: () => get<any[]>("/api/risk"),
   },
 
   // Actions
   actions: {
     list: (params?: { status?: string }) => {
       const qs = params?.status ? `?status=${params.status}` : "";
-      return get<any[]>(`/api/actions/${qs}`);
+      return get<any[]>(`/api/actions${qs}`);
     },
-    create: (data: object) => post<any>("/api/actions/", data),
+    create: (data: object) => post<any>("/api/actions", data),
     complete: (id: string) => put<any>(`/api/actions/${id}/complete`),
   },
 

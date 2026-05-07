@@ -26,8 +26,8 @@ async def list_records(current: CurrentUser = Depends(get_current_user)):
 @router.get("/{financial_year}")
 async def get_record(financial_year: str, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
-    result = sb.table("tax_records").select("*").eq("user_id", current.user_id).eq("financial_year", financial_year).single().execute()
-    return result.data
+    result = sb.table("tax_records").select("*").eq("user_id", current.user_id).eq("financial_year", financial_year).execute()
+    return result.data[0] if result.data else {}
 
 
 @router.post("", status_code=201)
