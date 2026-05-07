@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ const Signup = () => {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -24,6 +25,22 @@ const Signup = () => {
     city: "",
   });
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  const startResendTimer = () => {
+    setResendTimer(60);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setResendTimer((t) => {
+        if (t <= 1) { clearInterval(timerRef.current!); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+  };
 
   const progress = step === "phone" ? 1 : step === "otp" ? 2 : 3;
 
@@ -32,13 +49,33 @@ const Signup = () => {
       toast.error("Please enter a valid 10-digit phone number");
       return;
     }
+    if (!/^[6-9]/.test(phone)) {
+      toast.error("Indian mobile numbers must start with 6, 7, 8, or 9");
+      return;
+    }
     try {
       setIsLoading(true);
       await sendOtp(phone);
       toast.success("OTP sent to +91 " + phone);
       setStep("otp");
+      startResendTimer();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setIsLoading(true);
+      await sendOtp(phone);
+      toast.success("OTP resent to +91 " + phone);
+      startResendTimer();
+      setOtp(["", "", "", "", "", ""]);
+      otpRefs.current[0]?.focus();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to resend OTP");
     } finally {
       setIsLoading(false);
     }
@@ -232,6 +269,23 @@ const Signup = () => {
                       disabled={isLoading}
                     />
                   ))}
+                </div>
+
+                {/* Resend Timer */}
+                <div className="text-center text-sm">
+                  {resendTimer > 0 ? (
+                    <p className="text-muted-foreground">
+                      Resend OTP in <span className="font-semibold text-primary">{resendTimer}s</span>
+                    </p>
+                  ) : (
+                    <button
+                      onClick={handleResendOtp}
+                      disabled={isLoading}
+                      className="text-primary hover:underline font-medium disabled:opacity-50"
+                    >
+                      Resend OTP
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex gap-3">
