@@ -1,39 +1,23 @@
 name: Deploy Backend → Railway
 
+# Railway auto-deploys via GitHub integration on push to main.
+# This workflow only runs checks; actual deploy is handled by Railway's GitHub App.
+
 on:
   push:
     branches: [main]
     paths:
       - "backend_spare/**"
-      - "railway.toml"
-      - ".github/workflows/deploy-backend.yml"
   workflow_dispatch:
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
-
-    env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
-
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Set Railway environment variables
+      - name: Verify backend files exist
         run: |
-          railway variables set \
-            SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
-            SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
-            ALLOWED_ORIGINS="${{ secrets.VITE_VERCEL_URL }}" \
-            --service backend
-
-      - name: Deploy
-        run: railway up --service backend --detach
+          test -f backend_spare/main.py && echo "main.py OK"
+          test -f backend_spare/requirements.txt && echo "requirements.txt OK"
+          test -f backend_spare/Dockerfile && echo "Dockerfile OK"
