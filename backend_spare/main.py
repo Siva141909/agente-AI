@@ -31,6 +31,7 @@ app = FastAPI(
     title="Agente AI Backend",
     description="CRUD API for gig worker financial app",
     version="2.0.0",
+    redirect_slashes=False,
 )
 
 _origins_env = os.getenv("ALLOWED_ORIGINS", "")
