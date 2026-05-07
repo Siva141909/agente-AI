@@ -28,8 +28,8 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           railway variables set \
-            SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+            SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             ALLOWED_ORIGINS="${{ secrets.VITE_VERCEL_URL }}" \
             --service backend
 
