@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useApp } from "@/contexts/AppContext";
+import { api } from "@/services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Loader2, Phone, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -80,8 +81,19 @@ const Login = () => {
     try {
       setIsLoading(true);
       await verifyOtp(phone, token);
-      toast.success("Login successful!");
-      navigate("/dashboard");
+      // Check if user has completed profile setup
+      try {
+        const userData = await api.users.me();
+        if (!userData.occupation || userData.full_name === "User" || !userData.city) {
+          toast.success("Welcome! Please complete your profile.");
+          navigate("/signup?profile=1");
+        } else {
+          toast.success("Login successful!");
+          navigate("/dashboard");
+        }
+      } catch {
+        navigate("/dashboard");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Invalid OTP");
       setOtp(["", "", "", "", "", ""]);

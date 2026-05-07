@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,11 @@ import { toast } from "sonner";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { sendOtp, verifyOtp } = useApp();
-  const [step, setStep] = useState<"phone" | "otp" | "profile">("phone");
+  const [step, setStep] = useState<"phone" | "otp" | "profile">(
+    searchParams.get("profile") ? "profile" : "phone"
+  );
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
