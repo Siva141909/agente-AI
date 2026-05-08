@@ -19,39 +19,46 @@ DROP FUNCTION IF EXISTS create_user_account(VARCHAR, VARCHAR, VARCHAR, VARCHAR, 
 -- ============================================================
 -- pgcrypto must be enabled: CREATE EXTENSION IF NOT EXISTS pgcrypto;
 INSERT INTO auth.users (
-  id, email, email_confirmed_at,
+  instance_id, id, aud, role,
+  email, email_confirmed_at,
   encrypted_password,
   raw_app_meta_data, raw_user_meta_data,
   created_at, updated_at
 ) VALUES
 (
+  '00000000-0000-0000-0000-000000000000',
   '10000000-0000-0000-0000-000000000001',
-  '9951778715@agente.local',
-  NOW(),
+  'authenticated', 'authenticated',
+  '9951778715@agente.local', NOW(),
   crypt('Demo@1234!', gen_salt('bf', 10)),
   '{"provider":"email","providers":["email"]}',
   '{"full_name":"Rajesh Kumar","phone_number":"9951778715","occupation":"Cab Driver","city":"Mumbai"}',
   NOW(), NOW()
 ),
 (
+  '00000000-0000-0000-0000-000000000000',
   '20000000-0000-0000-0000-000000000002',
-  '7207364460@agente.local',
-  NOW(),
+  'authenticated', 'authenticated',
+  '7207364460@agente.local', NOW(),
   crypt('Demo@1234!', gen_salt('bf', 10)),
   '{"provider":"email","providers":["email"]}',
   '{"full_name":"Priya Sharma","phone_number":"7207364460","occupation":"Food Delivery","city":"Bengaluru"}',
   NOW(), NOW()
 ),
 (
+  '00000000-0000-0000-0000-000000000000',
   '30000000-0000-0000-0000-000000000003',
-  '9790958879@agente.local',
-  NOW(),
+  'authenticated', 'authenticated',
+  '9790958879@agente.local', NOW(),
   crypt('Demo@1234!', gen_salt('bf', 10)),
   '{"provider":"email","providers":["email"]}',
   '{"full_name":"Sunita Devi","phone_number":"9790958879","occupation":"Home Services","city":"Delhi"}',
   NOW(), NOW()
 )
 ON CONFLICT (id) DO UPDATE SET
+  instance_id        = '00000000-0000-0000-0000-000000000000',
+  aud                = 'authenticated',
+  role               = 'authenticated',
   email              = EXCLUDED.email,
   email_confirmed_at = EXCLUDED.email_confirmed_at,
   encrypted_password = EXCLUDED.encrypted_password,
