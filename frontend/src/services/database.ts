@@ -119,33 +119,48 @@ export interface BankAccount {
 
 export const db = {
 
-  // ── AUTH (Supabase JS for OTP; JWT stored for backend calls) ─────────────
+  // ── AUTH (Supabase email+password; phone stored as {phone}@agente.local) ──
 
   auth: {
-    sendOtp: async (phone_number: string) => {
-      const phone = "+91" + phone_number.replace(/\D/g, "").slice(-10);
-      const { error } = await supabase.auth.signInWithOtp({ phone });
-      if (error) throw new Error(error.message);
-    },
-
-    verifyOtp: async (phone_number: string, token: string) => {
-      const phone = "+91" + phone_number.replace(/\D/g, "").slice(-10);
-      const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
-      if (error) throw new Error("Invalid OTP. Please try again.");
-      if (!data.user || !data.session) throw new Error("Verification failed.");
-      // Store the Supabase JWT — the backend validates this
-      localStorage.setItem("user_id", data.user.id);
+    signup: async (
+      phone: string,
+      password: string,
+      full_name: string,
+      occupation: string,
+      city: string,
+    ) => {
+      const email = `${phone.replace(/\D/g, "").slice(-10)}@agente.local`;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name, phone_number: phone.replace(/\D/g, "").slice(-10), occupation, city },
+        },
+      });
+      if (error) {
+        if (error.message.toLowerCase().includes("already registered")) {
+          throw new Error("This phone number is already registered. Please login.");
+        }
+        throw new Error(error.message);
+      }
+      if (!data.session) {
+        throw new Error(
+          "Account created but email confirmation is required. " +
+          "Please disable 'Confirm email' in Supabase Auth settings.",
+        );
+      }
+      localStorage.setItem("user_id", data.user!.id);
       TokenManager.set(data.session.access_token);
       return data;
     },
 
-    updateProfile: async (userId: string, profileData: {
-      full_name?: string;
-      occupation?: string;
-      city?: string;
-      email?: string;
-    }) => {
-      await api.users.update(profileData);
+    login: async (phone: string, password: string) => {
+      const email = `${phone.replace(/\D/g, "").slice(-10)}@agente.local`;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error("Invalid phone number or password.");
+      localStorage.setItem("user_id", data.user.id);
+      TokenManager.set(data.session.access_token);
+      return data;
     },
 
     logout: async () => {
@@ -155,7 +170,6 @@ export const db = {
 
     getSession: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      // Keep TokenManager in sync when session refreshes
       if (session?.access_token) TokenManager.set(session.access_token);
       return session;
     },

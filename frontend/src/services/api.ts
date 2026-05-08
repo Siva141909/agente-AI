@@ -51,14 +51,8 @@ const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 // ── API surface ───────────────────────────────────────────────────────────────
 
 export const api = {
-  // Auth (backend wraps Supabase OTP — optional, frontend can call Supabase JS directly)
-  auth: {
-    sendOtp: (phone: string) => post("/api/auth/send-otp", { phone }),
-    verifyOtp: (phone: string, token: string) =>
-      post<{ access_token: string; refresh_token: string; user_id: string }>(
-        "/api/auth/verify-otp", { phone, token }
-      ),
-  },
+  // Auth is handled directly via Supabase JS (signInWithPassword / signUp).
+  // No backend auth endpoints — Supabase issues JWTs, backend validates them.
 
   // Users
   users: {

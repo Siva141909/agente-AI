@@ -47,8 +47,8 @@ interface AppContextType {
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  sendOtp: (phone: string) => Promise<void>;
-  verifyOtp: (phone: string, token: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  signup: (phone: string, password: string, full_name: string, occupation: string, city: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshData: () => Promise<void>;
 }
@@ -213,26 +213,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setRecommendations(recommendations.map((r) => r.id === id ? { ...r, status } : r));
   };
 
-  const sendOtp = async (phone: string) => {
-    try {
-      setError(null);
-      await db.auth.sendOtp(phone);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to send OTP";
-      setError(msg);
-      throw err;
-    }
-  };
-
-  const verifyOtp = async (phone: string, token: string) => {
+  const login = async (phone: string, password: string) => {
     try {
       setError(null);
       setIsLoading(true);
-      await db.auth.verifyOtp(phone, token);
+      await db.auth.login(phone, password);
       setIsAuthenticated(true);
       await loadUserData();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "OTP verification failed";
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (phone: string, password: string, full_name: string, occupation: string, city: string) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await db.auth.signup(phone, password, full_name, occupation, city);
+      setIsAuthenticated(true);
+      await loadUserData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Signup failed";
       setError(msg);
       throw err;
     } finally {
@@ -257,7 +262,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       dailyGoal, goalProgress,
       isLoading, error,
       isAuthenticated,
-      sendOtp, verifyOtp, logout,
+      login, signup, logout,
       refreshData,
     }}>
       {children}

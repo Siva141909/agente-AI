@@ -4,70 +4,80 @@
 -- Uses Supabase phone OTP — no password needed
 -- ============================================================
 
--- 1. Clean up any previous email-based auth entries
-DELETE FROM auth.identities WHERE provider = 'email' AND provider_id LIKE '%@agente.local';
-DELETE FROM auth.users WHERE email LIKE '%@agente.local';
+-- 1. Clean up any previous auth entries for demo users
+DELETE FROM auth.identities WHERE provider_id LIKE '%@agente.local' OR provider = 'phone';
+DELETE FROM auth.users WHERE email LIKE '%@agente.local' OR phone IN ('+919951778715','+917207364460','+919790958879');
 
 -- 2. Drop old RPC auth functions
 DROP FUNCTION IF EXISTS verify_user_login(VARCHAR, VARCHAR);
 DROP FUNCTION IF EXISTS create_user_account(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, DATE, VARCHAR);
 
 -- ============================================================
--- 3. Pre-create phone auth accounts for demo users
+-- 3. Pre-create email+password accounts for demo users
+--    Login: phone@agente.local / Demo@1234!
 --    Same UUIDs as seed data so all FK relationships work
---    Phone format: +91XXXXXXXXXX (India)
 -- ============================================================
+-- pgcrypto must be enabled: CREATE EXTENSION IF NOT EXISTS pgcrypto;
 INSERT INTO auth.users (
-  id, phone, phone_confirmed_at,
+  id, email, email_confirmed_at,
+  encrypted_password,
   raw_app_meta_data, raw_user_meta_data,
   created_at, updated_at
 ) VALUES
 (
   '10000000-0000-0000-0000-000000000001',
-  '+919951778715',
+  '9951778715@agente.local',
   NOW(),
-  '{"provider":"phone","providers":["phone"]}',
+  crypt('Demo@1234!', gen_salt('bf', 10)),
+  '{"provider":"email","providers":["email"]}',
   '{"full_name":"Rajesh Kumar","phone_number":"9951778715","occupation":"Cab Driver","city":"Mumbai"}',
   NOW(), NOW()
 ),
 (
   '20000000-0000-0000-0000-000000000002',
-  '+917207364460',
+  '7207364460@agente.local',
   NOW(),
-  '{"provider":"phone","providers":["phone"]}',
+  crypt('Demo@1234!', gen_salt('bf', 10)),
+  '{"provider":"email","providers":["email"]}',
   '{"full_name":"Priya Sharma","phone_number":"7207364460","occupation":"Food Delivery","city":"Bengaluru"}',
   NOW(), NOW()
 ),
 (
   '30000000-0000-0000-0000-000000000003',
-  '+919790958879',
+  '9790958879@agente.local',
   NOW(),
-  '{"provider":"phone","providers":["phone"]}',
+  crypt('Demo@1234!', gen_salt('bf', 10)),
+  '{"provider":"email","providers":["email"]}',
   '{"full_name":"Sunita Devi","phone_number":"9790958879","occupation":"Home Services","city":"Delhi"}',
   NOW(), NOW()
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  email              = EXCLUDED.email,
+  email_confirmed_at = EXCLUDED.email_confirmed_at,
+  encrypted_password = EXCLUDED.encrypted_password,
+  raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+  updated_at         = NOW();
 
--- 4. Create phone identity records
+-- 4. Create email identity records
 INSERT INTO auth.identities (provider_id, user_id, identity_data, provider, created_at, updated_at)
 VALUES
 (
-  '+919951778715',
+  '9951778715@agente.local',
   '10000000-0000-0000-0000-000000000001',
-  '{"sub":"10000000-0000-0000-0000-000000000001","phone":"+919951778715"}',
-  'phone', NOW(), NOW()
+  '{"sub":"10000000-0000-0000-0000-000000000001","email":"9951778715@agente.local"}',
+  'email', NOW(), NOW()
 ),
 (
-  '+917207364460',
+  '7207364460@agente.local',
   '20000000-0000-0000-0000-000000000002',
-  '{"sub":"20000000-0000-0000-0000-000000000002","phone":"+917207364460"}',
-  'phone', NOW(), NOW()
+  '{"sub":"20000000-0000-0000-0000-000000000002","email":"7207364460@agente.local"}',
+  'email', NOW(), NOW()
 ),
 (
-  '+919790958879',
+  '9790958879@agente.local',
   '30000000-0000-0000-0000-000000000003',
-  '{"sub":"30000000-0000-0000-0000-000000000003","phone":"+919790958879"}',
-  'phone', NOW(), NOW()
+  '{"sub":"30000000-0000-0000-0000-000000000003","email":"9790958879@agente.local"}',
+  'email', NOW(), NOW()
 )
 ON CONFLICT (provider_id, provider) DO NOTHING;
 

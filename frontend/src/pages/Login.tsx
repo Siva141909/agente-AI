@@ -1,41 +1,23 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useApp } from "@/contexts/AppContext";
 import { api } from "@/services/api";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2, Phone, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Loader2, LogIn, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { sendOtp, verifyOtp } = useApp();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const { login } = useApp();
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
-
-  const startResendTimer = () => {
-    setResendTimer(60);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setResendTimer((t) => {
-        if (t <= 1) { clearInterval(timerRef.current!); return 0; }
-        return t - 1;
-      });
-    }, 1000);
-  };
-
-  const handleSendOtp = async () => {
+  const handleLogin = async () => {
     if (phone.replace(/\D/g, "").length !== 10) {
       toast.error("Please enter a valid 10-digit phone number");
       return;
@@ -44,44 +26,14 @@ const Login = () => {
       toast.error("Indian mobile numbers must start with 6, 7, 8, or 9");
       return;
     }
-    try {
-      setIsLoading(true);
-      await sendOtp(phone);
-      toast.success("OTP sent to +91 " + phone);
-      setStep("otp");
-      startResendTimer();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to send OTP");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      setIsLoading(true);
-      await sendOtp(phone);
-      toast.success("OTP resent to +91 " + phone);
-      startResendTimer();
-      setOtp(["", "", "", "", "", ""]);
-      otpRefs.current[0]?.focus();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to resend OTP");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    const token = otp.join("");
-    if (token.length !== 6) {
-      toast.error("Please enter the 6-digit OTP");
+    if (!password) {
+      toast.error("Please enter your password");
       return;
     }
     try {
       setIsLoading(true);
-      await verifyOtp(phone, token);
-      // Check if user has completed profile setup
+      await login(phone, password);
+      // Check if profile is complete
       try {
         const userData = await api.users.me();
         if (!userData.occupation || userData.full_name === "User" || !userData.city) {
@@ -95,27 +47,10 @@ const Login = () => {
         navigate("/dashboard");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Invalid OTP");
-      setOtp(["", "", "", "", "", ""]);
-      otpRefs.current[0]?.focus();
+      toast.error(err instanceof Error ? err.message : "Login failed");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-    if (value && index < 5) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    if (e.key === "Enter") handleVerifyOtp();
   };
 
   return (
@@ -125,145 +60,85 @@ const Login = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card rounded-3xl shadow-xl border border-border p-8">
-          <AnimatePresence mode="wait">
-            {step === "phone" && (
-              <motion.div
-                key="phone"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Welcome back!</h2>
-                    <p className="text-muted-foreground text-sm">Login with your phone number</p>
-                  </div>
+        <div className="bg-card rounded-3xl shadow-xl border border-border p-8 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <LogIn className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Welcome back!</h2>
+              <p className="text-muted-foreground text-sm">Login with your phone &amp; password</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <div className="flex gap-2">
+                <div className="flex items-center px-3 bg-muted rounded-lg border border-border text-sm font-medium text-muted-foreground">
+                  <Phone className="w-4 h-4 mr-1" />+91
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center px-3 bg-muted rounded-lg border border-border text-sm font-medium text-muted-foreground">
-                      +91
-                    </div>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="9876543210"
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                      disabled={isLoading}
-                      className="flex-1"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleSendOtp}
-                  className="w-full bg-primary"
-                  disabled={isLoading || phone.length !== 10}
-                >
-                  {isLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending OTP...</>
-                  ) : (
-                    <>Send OTP<ArrowRight className="w-4 h-4 ml-2" /></>
-                  )}
-                </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button onClick={() => navigate("/signup")} className="text-primary hover:underline font-medium">
-                    Sign up here
-                  </button>
-                </p>
-              </motion.div>
-            )}
-
-            {step === "otp" && (
-              <motion.div
-                key="otp"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Enter OTP</h2>
-                    <p className="text-muted-foreground text-sm">
-                      Sent to +91 {phone}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 justify-between">
-                  {otp.map((digit, i) => (
-                    <Input
-                      key={i}
-                      ref={(el) => { otpRefs.current[i] = el; }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleOtpChange(i, e.target.value)}
-                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-12 h-12 text-center text-xl font-bold"
-                      autoFocus={i === 0}
-                      disabled={isLoading}
-                    />
-                  ))}
-                </div>
-
-                {/* Resend Timer */}
-                <div className="text-center text-sm">
-                  {resendTimer > 0 ? (
-                    <p className="text-muted-foreground">
-                      Resend OTP in <span className="font-semibold text-primary">{resendTimer}s</span>
-                    </p>
-                  ) : (
-                    <button
-                      onClick={handleResendOtp}
-                      disabled={isLoading}
-                      className="text-primary hover:underline font-medium disabled:opacity-50"
-                    >
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-
-                <Button
-                  onClick={handleVerifyOtp}
-                  className="w-full bg-gradient-to-r from-primary to-secondary"
-                  disabled={isLoading || otp.join("").length !== 6}
-                >
-                  {isLoading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
-                  ) : (
-                    <>Verify & Login<ShieldCheck className="w-4 h-4 ml-2" /></>
-                  )}
-                </Button>
-
-                <button
-                  onClick={() => { setStep("phone"); setOtp(["", "", "", "", "", ""]); }}
-                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="9876543210"
+                  maxLength={10}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   disabled={isLoading}
+                  className="flex-1"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
                 >
-                  Change phone number
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-              </motion.div>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleLogin}
+            className="w-full bg-gradient-to-r from-primary to-secondary"
+            disabled={isLoading || phone.length !== 10 || !password}
+          >
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Logging in...</>
+            ) : (
+              <><LogIn className="w-4 h-4 mr-2" />Login</>
             )}
-          </AnimatePresence>
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <button
+              onClick={() => navigate("/signup")}
+              className="text-primary hover:underline font-medium"
+            >
+              Sign up here
+            </button>
+          </p>
         </div>
       </motion.div>
     </div>
