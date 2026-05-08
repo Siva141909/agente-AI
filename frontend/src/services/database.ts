@@ -157,7 +157,7 @@ export const db = {
     login: async (phone: string, password: string) => {
       const email = `${phone.replace(/\D/g, "").slice(-10)}@agente.local`;
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error("Invalid phone number or password.");
+      if (error) throw new Error(error.message);
       localStorage.setItem("user_id", data.user.id);
       TokenManager.set(data.session.access_token);
       return data;
