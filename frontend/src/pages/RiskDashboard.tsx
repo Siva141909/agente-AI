@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertTriangle, Shield, CheckCircle, Home } from "lucide-react";
+import { AlertTriangle, Shield, CheckCircle, Home } from "lucide-react";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
 import db from "@/services/database";
 import { toast } from "sonner";
@@ -72,11 +73,8 @@ const RiskDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Analyzing risks...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <SkeletonCard /><SkeletonCard /><SkeletonCard />
       </div>
     );
   }

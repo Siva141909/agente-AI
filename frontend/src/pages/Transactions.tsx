@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, Edit, Trash2, Loader2 } from "lucide-react";
+import { CalendarIcon, Search, Edit, Trash2 } from "lucide-react";
+import { SkeletonList } from "@/components/ui/skeleton-card";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -143,11 +144,8 @@ const Transactions = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading transactions...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <SkeletonList rows={8} />
       </div>
     );
   }

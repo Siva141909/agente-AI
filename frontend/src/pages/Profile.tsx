@@ -1,60 +1,44 @@
 import { useState, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useNavigate } from "react-router-dom";
-import { Home } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Loader2, Save } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Save, LogOut, Eye, EyeOff, ShieldCheck, User, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 import db from "@/services/database";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import PageIntro from "@/components/PageIntro";
 import HelpTooltip from "@/components/HelpTooltip";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 
 const Profile = () => {
   const { user, logout } = useApp();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
-    // Basic Info
-    full_name: "",
-    phone_number: "",
-    email: "",
-    date_of_birth: "",
-    preferred_language: "en",
-    occupation: "",
-    city: "",
-    state: "",
-    pin_code: "",
-    // Financial Profile
-    monthly_income_min: "",
-    monthly_income_max: "",
-    monthly_expenses_avg: "",
-    emergency_fund_target: "",
-    current_emergency_fund: "",
-    risk_tolerance: "moderate",
-    dependents: 0,
-    income_sources: [] as any[],
-    debt_obligations: [] as any[],
+    full_name: "", phone_number: "", email: "", date_of_birth: "",
+    preferred_language: "en", occupation: "", city: "", state: "", pin_code: "",
+    monthly_income_min: "", monthly_income_max: "", monthly_expenses_avg: "",
+    emergency_fund_target: "", current_emergency_fund: "",
+    risk_tolerance: "moderate", dependents: 0,
   });
 
+  // Password change state
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+
   useEffect(() => {
-    const userId = localStorage.getItem('user_id');
-    if (!user && !userId) {
-    navigate("/signup");
-      return;
-    }
-    // Load profile if user exists OR if user_id exists (for testing)
-    if (user || userId) {
-      loadProfile();
-    }
+    const userId = localStorage.getItem("user_id");
+    if (!user && !userId) { navigate("/signup"); return; }
+    loadProfile();
   }, [user]);
 
   const loadProfile = async () => {
@@ -64,11 +48,10 @@ const Profile = () => {
         db.users.getMe(),
         db.users.getProfile().catch(() => null),
       ]);
-      
       setFormData({
         full_name: userData.full_name || "",
         phone_number: userData.phone_number || "",
-        email: userData.email || "",
+        email: userData.email?.replace(/@agente\.local$/, "") || "",
         date_of_birth: userData.date_of_birth || "",
         preferred_language: userData.preferred_language || "en",
         occupation: userData.occupation || "",
@@ -82,13 +65,8 @@ const Profile = () => {
         current_emergency_fund: profileData?.current_emergency_fund?.toString() || "",
         risk_tolerance: profileData?.risk_tolerance || "moderate",
         dependents: profileData?.dependents || 0,
-        income_sources: profileData?.income_sources || [],
-        debt_obligations: profileData?.debt_obligations || [],
       });
-      
-      setProfile(profileData);
-    } catch (error) {
-      console.error("Failed to load profile:", error);
+    } catch {
       toast.error("Failed to load profile");
     } finally {
       setIsLoading(false);
@@ -108,7 +86,7 @@ const Profile = () => {
           city: formData.city,
           state: formData.state,
           pin_code: formData.pin_code,
-        }),
+        } as any),
         db.users.updateProfile({
           monthly_income_min: formData.monthly_income_min ? parseFloat(formData.monthly_income_min) : undefined,
           monthly_income_max: formData.monthly_income_max ? parseFloat(formData.monthly_income_max) : undefined,
@@ -117,267 +95,211 @@ const Profile = () => {
           current_emergency_fund: formData.current_emergency_fund ? parseFloat(formData.current_emergency_fund) : undefined,
           risk_tolerance: formData.risk_tolerance as any,
           dependents: formData.dependents,
-          income_sources: formData.income_sources,
-          debt_obligations: formData.debt_obligations,
-        }),
+        } as any),
       ]);
-      toast.success("Profile updated successfully!");
-    } catch (error) {
-      toast.error("Failed to update profile");
+      toast.success("Profile saved!");
+    } catch {
+      toast.error("Failed to save profile");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    if (newPassword !== confirmPassword) { toast.error("Passwords do not match"); return; }
+    try {
+      setIsChangingPwd(true);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Password changed successfully!");
+      setNewPassword(""); setConfirmPassword("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to change password");
+    } finally {
+      setIsChangingPwd(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
 
+  const f = formData;
+  const set = (k: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFormData({ ...formData, [k]: e.target.value });
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} title="Back to Home">
-            <Home className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Profile</h1>
-            <p className="text-muted-foreground">Manage your personal and financial information</p>
-          </div>
-          </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? "Saving..." : "Save Changes"}
-        </Button>
-          </div>
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5 pb-24 md:pb-8">
 
-      <PageIntro
-        title="What is this page?"
-        description="This page stores your personal and financial details, like income range, expenses, dependents, and linked bank accounts."
-      />
-
-      {/* Basic Info */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Full Name *</Label>
-            <Input
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-            />
-            </div>
-          <div className="space-y-2">
-            <Label>Phone Number *</Label>
-            <Input
-              value={formData.phone_number}
-              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-              disabled
-            />
-            </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-            </div>
-          <div className="space-y-2">
-            <Label>Date of Birth</Label>
-            <Input
-              type="date"
-              value={formData.date_of_birth}
-              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            />
-                </div>
-          <div className="space-y-2">
-            <Label>Preferred Language</Label>
-            <Select
-              value={formData.preferred_language}
-              onValueChange={(v) => setFormData({ ...formData, preferred_language: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="hi">Hindi</SelectItem>
-                <SelectItem value="mr">Marathi</SelectItem>
-                <SelectItem value="bn">Bengali</SelectItem>
-                <SelectItem value="ta">Tamil</SelectItem>
-              </SelectContent>
-            </Select>
-              </div>
-          <div className="space-y-2">
-            <Label>Occupation</Label>
-            <Input
-              value={formData.occupation}
-              onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
-            />
-                </div>
-          <div className="space-y-2">
-            <Label>City</Label>
-            <Input
-              value={formData.city}
-              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-            />
-              </div>
-          <div className="space-y-2">
-            <Label>State</Label>
-            <Input
-              value={formData.state}
-              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-            />
-                </div>
-          <div className="space-y-2">
-            <Label>PIN Code</Label>
-            <Input
-              value={formData.pin_code}
-              onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
-            />
-              </div>
-            </div>
-          </Card>
-
-      {/* Financial Profile */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Financial Profile</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Monthly Income (Min)</Label>
-            <Input
-              type="number"
-              value={formData.monthly_income_min}
-              onChange={(e) => setFormData({ ...formData, monthly_income_min: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Monthly Income (Max)</Label>
-            <Input
-              type="number"
-              value={formData.monthly_income_max}
-              onChange={(e) => setFormData({ ...formData, monthly_income_max: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Average Monthly Expenses</Label>
-            <Input
-              type="number"
-              value={formData.monthly_expenses_avg}
-              onChange={(e) => setFormData({ ...formData, monthly_expenses_avg: e.target.value })}
-            />
-              </div>
-          <div className="space-y-2">
-            <Label>Emergency Fund Target</Label>
-            <Input
-              type="number"
-              value={formData.emergency_fund_target}
-              onChange={(e) => setFormData({ ...formData, emergency_fund_target: e.target.value })}
-            />
-              </div>
-          <div className="space-y-2">
-            <Label>Current Emergency Fund</Label>
-            <Input
-              type="number"
-              value={formData.current_emergency_fund}
-              onChange={(e) => setFormData({ ...formData, current_emergency_fund: e.target.value })}
-            />
-            </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Label>Risk Tolerance</Label>
-              <HelpTooltip text="How comfortable you are with taking financial risk: low, moderate, or high." />
-              </div>
-            <Select
-              value={formData.risk_tolerance}
-              onValueChange={(v) => setFormData({ ...formData, risk_tolerance: v })}
-            >
-              <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="moderate">Moderate</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Label>Dependents</Label>
-              <HelpTooltip text="Number of people who depend on your income, like family members." />
-            </div>
-            <Input
-              type="number"
-              value={formData.dependents}
-              onChange={(e) => setFormData({ ...formData, dependents: parseInt(e.target.value) || 0 })}
-            />
-          </div>
+      {/* Avatar + header */}
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-black shadow-lg">
+          {f.full_name?.charAt(0).toUpperCase() || "U"}
         </div>
-      </Card>
+        <div>
+          <h1 className="text-2xl font-bold">{f.full_name || "Your Profile"}</h1>
+          <p className="text-sm text-muted-foreground">{f.occupation}{f.city ? ` · ${f.city}` : ""}</p>
+        </div>
+        <Button onClick={handleSave} disabled={isSaving} className="ml-auto bg-primary">
+          <Save className="w-4 h-4 mr-2" />
+          {isSaving ? "Saving…" : "Save"}
+        </Button>
+      </div>
 
-      {/* Security */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Security</h3>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // Password change logic will be implemented here
-            toast.info("Password change feature coming soon");
-          }}
-          className="space-y-4"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
-            <Input 
-              id="current-password"
-              type="password" 
-              autoComplete="current-password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
-            <Input 
-              id="new-password"
-              type="password" 
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input 
-              id="confirm-password"
-              type="password" 
-              autoComplete="new-password"
-            />
-          </div>
-          <Button type="submit" variant="outline">Change Password</Button>
-        </form>
-          </Card>
+      <Accordion type="multiple" defaultValue={["basic"]} className="space-y-3">
+
+        {/* Basic Info */}
+        <AccordionItem value="basic" className="border rounded-2xl px-5 bg-card shadow-sm">
+          <AccordionTrigger className="hover:no-underline py-4">
+            <div className="flex items-center gap-2 font-semibold">
+              <User className="w-4 h-4 text-primary" /> Basic Information
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pb-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { label: "Full Name", key: "full_name" },
+                { label: "Phone Number", key: "phone_number", disabled: true },
+                { label: "Email", key: "email", type: "email" },
+                { label: "Date of Birth", key: "date_of_birth", type: "date" },
+                { label: "Occupation", key: "occupation" },
+                { label: "City", key: "city" },
+                { label: "State", key: "state" },
+                { label: "PIN Code", key: "pin_code" },
+              ].map(({ label, key, type = "text", disabled }) => (
+                <div key={key} className="space-y-1.5">
+                  <Label>{label}{disabled && <span className="text-xs text-muted-foreground ml-1">(locked)</span>}</Label>
+                  <Input
+                    type={type}
+                    value={(f as any)[key]}
+                    onChange={set(key as keyof typeof formData)}
+                    disabled={disabled}
+                  />
+                </div>
+              ))}
+              <div className="space-y-1.5">
+                <Label>Preferred Language</Label>
+                <Select value={f.preferred_language} onValueChange={(v) => setFormData({ ...f, preferred_language: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[["en","English"],["hi","Hindi"],["mr","Marathi"],["bn","Bengali"],["ta","Tamil"]].map(([v,l]) => (
+                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Financial Profile */}
+        <AccordionItem value="financial" className="border rounded-2xl px-5 bg-card shadow-sm">
+          <AccordionTrigger className="hover:no-underline py-4">
+            <div className="flex items-center gap-2 font-semibold">
+              <BarChart3 className="w-4 h-4 text-primary" /> Financial Profile
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pb-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { label: "Monthly Income (Min) ₹", key: "monthly_income_min" },
+                { label: "Monthly Income (Max) ₹", key: "monthly_income_max" },
+                { label: "Avg Monthly Expenses ₹", key: "monthly_expenses_avg" },
+                { label: "Emergency Fund Target ₹", key: "emergency_fund_target" },
+                { label: "Current Emergency Fund ₹", key: "current_emergency_fund" },
+              ].map(({ label, key }) => (
+                <div key={key} className="space-y-1.5">
+                  <Label>{label}</Label>
+                  <Input type="number" inputMode="decimal" value={(f as any)[key]} onChange={set(key as keyof typeof formData)} />
+                </div>
+              ))}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Label>Risk Tolerance</Label>
+                  <HelpTooltip text="How comfortable you are with financial risk." />
+                </div>
+                <Select value={f.risk_tolerance} onValueChange={(v) => setFormData({ ...f, risk_tolerance: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="moderate">Moderate</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Label>Dependents</Label>
+                  <HelpTooltip text="Family members who depend on your income." />
+                </div>
+                <Input type="number" value={f.dependents} onChange={(e) => setFormData({ ...f, dependents: parseInt(e.target.value) || 0 })} />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Security */}
+        <AccordionItem value="security" className="border rounded-2xl px-5 bg-card shadow-sm">
+          <AccordionTrigger className="hover:no-underline py-4">
+            <div className="flex items-center gap-2 font-semibold">
+              <ShieldCheck className="w-4 h-4 text-primary" /> Security
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pb-5">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>New Password</Label>
+                <div className="relative">
+                  <Input type={showNew ? "text" : "password"} value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 8 characters" className="pr-10" />
+                  <button type="button" onClick={() => setShowNew(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Confirm New Password</Label>
+                <div className="relative">
+                  <Input type={showConfirm ? "text" : "password"} value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" className="pr-10" />
+                  <button type="button" onClick={() => setShowConfirm(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-xs text-red-500">Passwords do not match</p>
+                )}
+              </div>
+              <Button onClick={handleChangePassword} disabled={isChangingPwd || !newPassword || newPassword !== confirmPassword} variant="outline">
+                {isChangingPwd ? "Changing…" : "Change Password"}
+              </Button>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* Logout */}
-      <Card className="p-6">
-          <Button
-          variant="destructive"
-          className="w-full"
-          onClick={() => {
-            logout();
-            navigate("/");
-          }}
-        >
-            Logout
+      <Card className="p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold">Sign out</p>
+            <p className="text-sm text-muted-foreground">You'll need to log in again</p>
+          </div>
+          <Button variant="destructive" onClick={() => { logout(); navigate("/"); }}>
+            <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>
+        </div>
       </Card>
-    </div>
+    </motion.div>
   );
 };
 

@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle, Clock, Play, Pause, RotateCcw, Home } from "lucide-react";
+import { CheckCircle, Clock, Play, Pause, RotateCcw, Home, Loader2 } from "lucide-react";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import db from "@/services/database";
@@ -150,11 +151,8 @@ const Actions = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading actions...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <SkeletonCard /><SkeletonCard /><SkeletonCard />
       </div>
     );
   }

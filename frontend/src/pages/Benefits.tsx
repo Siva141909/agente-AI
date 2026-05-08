@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Home, Search, FileText, CheckCircle, Clock, XCircle, ExternalLink, Award } from "lucide-react";
+import { Home, Search, FileText, CheckCircle, Clock, XCircle, ExternalLink, Award } from "lucide-react";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
 import db from "@/services/database";
 import { toast } from "sonner";
@@ -148,11 +149,8 @@ const Benefits = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-          <p className="text-[15px] text-muted-foreground">Loading government schemes...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
       </div>
     );
   }

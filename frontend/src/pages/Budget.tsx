@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Plus, Edit, Trash2, Home, X } from "lucide-react";
+import { Plus, Edit, Trash2, Home, X, Loader2 } from "lucide-react";
+import { SkeletonCard, SkeletonStat } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import db from "@/services/database";
@@ -253,11 +254,9 @@ const Budget = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading budget...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <div className="grid grid-cols-2 gap-4"><SkeletonStat /><SkeletonStat /></div>
+        <SkeletonCard /><SkeletonCard />
       </div>
     );
   }

@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Lightbulb, Search, CheckCircle, XCircle, Clock, Home } from "lucide-react";
+import { Lightbulb, Search, CheckCircle, XCircle, Clock, Home } from "lucide-react";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import db from "@/services/database";
@@ -96,11 +97,8 @@ const Tips = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading recommendations...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
       </div>
     );
   }

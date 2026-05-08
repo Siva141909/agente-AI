@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Home, FileText, Info, AlertCircle, RefreshCw, CheckCircle } from "lucide-react";
+import { SkeletonCard, SkeletonStat } from "@/components/ui/skeleton-card";
 import db from "@/services/database";
 import { toast } from "sonner";
 import PageIntro from "@/components/PageIntro";
@@ -182,11 +183,9 @@ const Tax = () => {
   // Loading State
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-          <p className="text-[15px] text-muted-foreground">Loading tax information...</p>
-        </div>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <div className="grid grid-cols-2 gap-4"><SkeletonStat /><SkeletonStat /></div>
+        <SkeletonCard /><SkeletonCard />
       </div>
     );
   }
@@ -308,9 +307,8 @@ const Tax = () => {
             </SheetHeader>
             <div className="mt-6 space-y-4">
               {isPreviewLoading ? (
-                <div className="flex flex-col items-center py-12 gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                  <p className="text-[13px] text-muted-foreground">Calculating from your transactions...</p>
+                <div className="space-y-3 py-4">
+                  <SkeletonStat /><SkeletonStat />
                 </div>
               ) : taxPreview ? (
                 <>

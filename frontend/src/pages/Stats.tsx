@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Home } from "lucide-react";
+import { CalendarIcon, Home } from "lucide-react";
+import { SkeletonChart, SkeletonStat } from "@/components/ui/skeleton-card";
 import { format, subDays } from "date-fns";
 import { motion } from "framer-motion";
 import db from "@/services/database";
@@ -162,11 +163,12 @@ const Stats = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading statistics...</p>
+      <div className="space-y-4 pb-24 md:pb-8">
+        <div className="grid grid-cols-2 gap-4">
+          <SkeletonStat /><SkeletonStat /><SkeletonStat /><SkeletonStat />
         </div>
+        <SkeletonChart />
+        <SkeletonChart />
       </div>
     );
   }
