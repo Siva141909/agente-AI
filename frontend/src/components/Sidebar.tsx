@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "@/contexts/SidebarContext";
 import {
   LayoutDashboard, BarChart3, Lightbulb, Wallet, TrendingUp,
   AlertCircle, CheckCircle, User, Menu, X, Zap,
-  ChevronLeft, ChevronRight, Award, DollarSign,
+  ChevronLeft, ChevronRight, Award, DollarSign, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import TransactionModal from "@/components/TransactionModal";
 
 const groups = [
   {
@@ -42,6 +44,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isOpen, setIsOpen } = useSidebar();
+  const [txOpen, setTxOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -173,6 +176,21 @@ const Sidebar = () => {
           ))}
         </nav>
 
+        {/* Add Transaction button */}
+        <div className="px-2 pb-2" style={{ borderTop: "1px solid hsl(210 46% 19%)", paddingTop: 8 }}>
+          <button
+            onClick={() => setTxOpen(true)}
+            title={!isOpen ? "Add Transaction" : undefined}
+            className={cn("w-full flex items-center gap-2 py-2 px-2 rounded-lg font-semibold text-[13px] transition-all", !isOpen && "justify-center")}
+            style={{ background: "rgba(0,212,255,0.12)", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.25)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,212,255,0.20)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,212,255,0.12)")}
+          >
+            <Plus size={15} className="flex-shrink-0" />
+            {isOpen && <span>Add Transaction</span>}
+          </button>
+        </div>
+
         {/* Bottom agent status strip */}
         {isOpen && (
           <div
@@ -184,6 +202,8 @@ const Sidebar = () => {
           </div>
         )}
       </div>
+
+      <TransactionModal open={txOpen} onClose={() => setTxOpen(false)} />
 
       {/* Mobile overlay */}
       {isOpen && (
