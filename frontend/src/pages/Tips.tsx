@@ -71,27 +71,23 @@ const Tips = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityStyle = (priority: string): React.CSSProperties => {
     switch (priority?.toLowerCase()) {
-      case "high":
-        return "bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800";
-      case "medium":
-        return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800";
-      case "low":
-        return "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800";
-      default:
-        return "bg-muted text-muted-foreground border border-border/40";
+      case "high":   return { background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" };
+      case "medium": return { background: "rgba(255,215,0,0.10)",  color: "#FFD700", border: "1px solid rgba(255,215,0,0.25)" };
+      case "low":    return { background: "rgba(0,212,255,0.08)",  color: "#00D4FF", border: "1px solid rgba(0,212,255,0.2)" };
+      default:       return {};
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="w-4 h-4 text-[#16a34a]" />;
+        return <CheckCircle className="w-4 h-4" style={{ color: "#00FF88" }} />;
       case "rejected":
         return <XCircle className="w-4 h-4 text-muted-foreground" />;
       default:
-        return <Clock className="w-4 h-4 text-amber-600" />;
+        return <Clock className="w-4 h-4" style={{ color: "#FF6B35" }} />;
     }
   };
 
@@ -216,7 +212,7 @@ const Tips = () => {
                 }}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <Badge className={getPriorityColor(rec.priority || "medium")}>
+                  <Badge style={getPriorityStyle(rec.priority || "medium")}>
                     {rec.priority?.toUpperCase() || "MEDIUM"}
                   </Badge>
                   {getStatusIcon(rec.status)}
@@ -257,7 +253,7 @@ const Tips = () => {
             <>
               <DialogHeader>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className={getPriorityColor(selectedRec.priority || "medium")}>
+                  <Badge style={getPriorityStyle(selectedRec.priority || "medium")}>
                     {selectedRec.priority?.toUpperCase() || "MEDIUM"}
                   </Badge>
                   {getStatusIcon(selectedRec.status)}

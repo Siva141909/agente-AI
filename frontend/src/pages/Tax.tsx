@@ -204,7 +204,7 @@ const Tax = () => {
           </div>
         </div>
 
-        <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/20">
+        <Alert variant="destructive" style={{ background: "rgba(255,51,102,0.10)", border: "1px solid rgba(255,51,102,0.3)" }}>
             <AlertCircle className="h-4 w-4" />
           <AlertTitle className="text-[15px] font-semibold">Unable to load tax information</AlertTitle>
           <AlertDescription className="text-[13px] mt-1">
@@ -324,7 +324,7 @@ const Tax = () => {
                     </div>
                     <div className="bg-background border border-border/40 rounded-[6px] p-4">
                       <p className="text-[12px] text-muted-foreground mb-1">Standard Deduction</p>
-                      <p className="text-[18px] font-semibold text-green-600">-₹{taxPreview.standard_deduction.toLocaleString("en-IN")}</p>
+                      <p className="text-[18px] font-semibold" style={{ color: "#00FF88" }}>-₹{taxPreview.standard_deduction.toLocaleString("en-IN")}</p>
                     </div>
                     <div className="bg-background border border-border/40 rounded-[6px] p-4">
                       <p className="text-[12px] text-muted-foreground mb-1">Taxable Income</p>
@@ -332,29 +332,29 @@ const Tax = () => {
                     </div>
                     <div className="bg-background border border-border/40 rounded-[6px] p-4">
                       <p className="text-[12px] text-muted-foreground mb-1">Estimated Tax</p>
-                      <p className={`text-[18px] font-semibold ${taxPreview.tax_liability > 0 ? "text-red-600" : "text-green-600"}`}>
+                      <p className="text-[18px] font-semibold" style={{ color: taxPreview.tax_liability > 0 ? "#FF3366" : "#00FF88" }}>
                         ₹{taxPreview.tax_liability.toLocaleString("en-IN")}
                       </p>
                     </div>
                   </div>
 
                   {taxPreview.tax_liability > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-[6px] p-4">
-                      <p className="text-[13px] font-medium text-amber-800 mb-1">Advance Tax (Quarterly)</p>
-                      <p className="text-[20px] font-semibold text-amber-700">₹{taxPreview.quarterly_advance_tax.toLocaleString("en-IN")} / quarter</p>
-                      <p className="text-[12px] text-amber-600 mt-1">Due dates: 15 Jun, 15 Sep, 15 Dec, 15 Mar</p>
+                    <div className="rounded-lg p-4" style={{ background: "rgba(255,107,53,0.10)", border: "1px solid rgba(255,107,53,0.3)" }}>
+                      <p className="text-[13px] font-medium mb-1" style={{ color: "#FF6B35" }}>Advance Tax (Quarterly)</p>
+                      <p className="text-[20px] font-semibold" style={{ color: "#FF6B35" }}>₹{taxPreview.quarterly_advance_tax.toLocaleString("en-IN")} / quarter</p>
+                      <p className="text-[12px] mt-1" style={{ color: "#6B8CAE" }}>Due dates: 15 Jun, 15 Sep, 15 Dec, 15 Mar</p>
                     </div>
                   )}
 
                   {!taxPreview.needs_filing ? (
-                    <div className="flex items-start gap-2.5 bg-green-50 border border-green-200 rounded-[6px] p-4">
-                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-[13px] text-green-700">Your income is below ₹3,00,000. You are not required to file an ITR, but you can file voluntarily for loans or visa.</p>
+                    <div className="flex items-start gap-2.5 rounded-lg p-4" style={{ background: "rgba(0,255,136,0.08)", border: "1px solid rgba(0,255,136,0.25)" }}>
+                      <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#00FF88" }} />
+                      <p className="text-[13px]" style={{ color: "#00FF88" }}>Your income is below ₹3,00,000. You are not required to file an ITR, but you can file voluntarily for loans or visa.</p>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-[6px] p-4">
-                      <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-[13px] text-blue-700">Your income exceeds ₹3,00,000. You should file ITR-1 (Form 16) by 31 July. Consider using the manual entry form to record your filing.</p>
+                    <div className="flex items-start gap-2.5 rounded-lg p-4" style={{ background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.25)" }}>
+                      <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#00D4FF" }} />
+                      <p className="text-[13px]" style={{ color: "#00D4FF" }}>Your income exceeds ₹3,00,000. You should file ITR-1 (Form 16) by 31 July. Consider using the manual entry form to record your filing.</p>
                     </div>
                   )}
 
@@ -557,13 +557,13 @@ const Tax = () => {
             </div>
             <div className="bg-background border border-border/40 rounded-[6px] p-5 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
               <p className="text-[13px] text-muted-foreground font-medium mb-1.5">Tax Liability</p>
-              <p className="text-[28px] font-semibold tracking-tight text-[#dc2626]">
+              <p className="text-[28px] font-semibold tracking-tight" style={{ color: "#FF3366" }}>
                 ₹{Number(currentRecord.tax_liability || 0).toLocaleString("en-IN")}
               </p>
             </div>
             <div className="bg-background border border-border/40 rounded-[6px] p-5 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
               <p className="text-[13px] text-muted-foreground font-medium mb-1.5">Tax Paid</p>
-              <p className="text-[28px] font-semibold tracking-tight text-[#16a34a]">
+              <p className="text-[28px] font-semibold tracking-tight" style={{ color: "#00FF88" }}>
                 ₹{Number(currentRecord.tax_paid || 0).toLocaleString("en-IN")}
               </p>
             </div>
@@ -599,9 +599,9 @@ const Tax = () => {
               {currentRecord.deduction_details && typeof currentRecord.deduction_details === "object" ? (
                 <div className="space-y-3">
                   {Object.entries(currentRecord.deduction_details).map(([category, amount]: [string, any]) => (
-                    <div key={category} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200">
+                    <div key={category} className="flex items-center justify-between p-3 rounded-lg" style={{ background: "rgba(0,255,136,0.08)", border: "1px solid rgba(0,255,136,0.2)" }}>
                       <span className="font-medium">{category}</span>
-                      <span className="font-semibold text-green-600">₹{Number(amount).toLocaleString("en-IN")}</span>
+                      <span className="font-semibold" style={{ color: "#00FF88" }}>₹{Number(amount).toLocaleString("en-IN")}</span>
                         </div>
                     ))}
                 </div>
@@ -632,9 +632,9 @@ const Tax = () => {
                 </div>
               )}
               {currentRecord.refund_amount && Number(currentRecord.refund_amount) > 0 && (
-                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/50 rounded-lg">
+                <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: "rgba(0,255,136,0.08)" }}>
                   <span className="text-muted-foreground">Refund Amount</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="font-semibold" style={{ color: "#00FF88" }}>
                     ₹{Number(currentRecord.refund_amount).toLocaleString("en-IN")}
                   </span>
                 </div>

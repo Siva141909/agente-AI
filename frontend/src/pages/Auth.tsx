@@ -94,7 +94,7 @@ const Auth = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#070D1A" }}>
       <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
         {/* Left: Brand Explanation */}
         <motion.div
@@ -103,7 +103,7 @@ const Auth = () => {
           className="hidden md:block space-y-6"
         >
           <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent mb-4">
+            <h1 className="text-5xl font-bold font-display gradient-text-cyan mb-4">
               Agente AI
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
@@ -118,7 +118,7 @@ const Auth = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * index }}
-                className="bg-card rounded-xl p-4 shadow-lg border border-border"
+                className="glass-card glass-card-hover p-4"
               >
                 <Icon className="w-6 h-6 text-primary mb-2" />
                 <p className="text-sm font-medium">{text}</p>
@@ -133,7 +133,7 @@ const Auth = () => {
           animate={{ opacity: 1, x: 0 }}
           className="w-full"
         >
-          <div className="bg-card rounded-3xl shadow-xl border border-border p-8">
+          <div className="glass-card p-8" style={{ borderColor: "rgba(0,212,255,0.15)" }}>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>

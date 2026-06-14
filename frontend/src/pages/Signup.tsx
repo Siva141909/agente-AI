@@ -21,7 +21,7 @@ function passwordStrength(p: string): number {
 }
 
 const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"];
-const strengthColor = ["", "bg-red-500", "bg-orange-400", "bg-yellow-400", "bg-green-500"];
+const strengthColorMap = ["", "#FF3366", "#FF6B35", "#FFD700", "#00FF88"];
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -77,13 +77,13 @@ const Signup = () => {
   const progress = step === "credentials" ? 1 : 2;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#070D1A" }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card rounded-3xl shadow-xl border border-border p-8">
+        <div className="glass-card p-8" style={{ borderColor: "rgba(0,212,255,0.15)" }}>
           {/* Progress Bar */}
           <div className="flex gap-2 mb-8">
             {[1, 2].map((s) => (
@@ -107,7 +107,7 @@ const Signup = () => {
                 className="space-y-5"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.25)" }}>
                     <ShieldCheck className="w-5 h-5 text-primary" />
                   </div>
                   <div>
@@ -161,15 +161,14 @@ const Signup = () => {
                         {[1, 2, 3, 4].map((i) => (
                           <div
                             key={i}
-                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                              i <= strength ? strengthColor[strength] : "bg-muted"
-                            }`}
+                            className="h-1 flex-1 rounded-full transition-all duration-300"
+                            style={{ background: i <= strength ? strengthColorMap[strength] : "hsl(210 46% 19%)" }}
                           />
                         ))}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Strength:{" "}
-                        <span className={strength >= 4 ? "text-green-500 font-semibold" : "font-medium"}>
+                        <span className="font-medium" style={strength >= 4 ? { color: "#00FF88" } : {}}>
                           {strengthLabel[strength]}
                         </span>
                         {strength < 4 && (
@@ -209,7 +208,7 @@ const Signup = () => {
                     </button>
                   </div>
                   {confirmPassword.length > 0 && (
-                    <p className={`text-xs flex items-center gap-1 ${password === confirmPassword ? "text-green-500" : "text-red-500"}`}>
+                    <p className="text-xs flex items-center gap-1" style={{ color: password === confirmPassword ? "#00FF88" : "#FF3366" }}>
                       {password === confirmPassword
                         ? <><Check className="w-3 h-3" /> Passwords match</>
                         : "Passwords do not match"}
@@ -244,7 +243,7 @@ const Signup = () => {
                 className="space-y-5"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.25)" }}>
                     <User className="w-5 h-5 text-primary" />
                   </div>
                   <div>
@@ -309,7 +308,7 @@ const Signup = () => {
                   )}
                   <Button
                     onClick={handleSignup}
-                    className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                    className="flex-1" style={{ background: "#00D4FF", color: "#070D1A", fontWeight: 600 }}
                     disabled={isLoading || !profile.full_name.trim() || !profile.occupation || !profile.city.trim()}
                   >
                     {isLoading ? (

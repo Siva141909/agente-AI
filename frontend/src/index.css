@@ -1,105 +1,260 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* ─────────────────────────────────────────────
+   Agente AI — Dark Sci-Fi Design System
+   ─────────────────────────────────────────────*/
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
+/* ── CSS Custom Properties ────────────────────*/
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Backgrounds */
+    --background: 220 58% 7%;     /* #070D1A */
+    --surface:    215 56% 12%;    /* #0D1B2E */
+    --surface-2:  215 49% 15%;    /* #132338 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    /* Borders */
+    --border: 210 46% 19%;    /* #1A3047 */
+    --input:  215 49% 15%;
+    --ring:   190 100% 50%;   /* cyan */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    /* Text */
+    --foreground: 210 100% 95%;   /* #E8F4FF */
 
-    --primary: 243 75% 59%;
-    --primary-foreground: 0 0% 100%;
+    /* Card */
+    --card:            215 56% 12%;
+    --card-foreground: 210 100% 95%;
 
-    --secondary: 262 83% 58%;
-    --secondary-foreground: 0 0% 100%;
+    /* Popover */
+    --popover:            215 56% 12%;
+    --popover-foreground: 210 100% 95%;
 
-    --success: 160 84% 39%;
-    --success-foreground: 0 0% 100%;
+    /* Primary → Cyan */
+    --primary:            190 100% 50%;
+    --primary-foreground: 220 58% 7%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* Secondary → Surface-2 */
+    --secondary:            215 49% 15%;
+    --secondary-foreground: 210 27% 55%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted → Border level */
+    --muted:            210 46% 19%;
+    --muted-foreground: 210 27% 55%;   /* #6B8CAE */
 
-    --accent: 262 83% 58%;
+    /* Accent → Violet */
+    --accent:            265 100% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    /* Destructive → Danger */
+    --destructive:            345 100% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 243 75% 59%;
+    /* Finance semantic tokens */
+    --income:  150 100% 50%;    /* #00FF88 */
+    --expense: 345 100% 60%;    /* #FF3366 */
 
-    --radius: 1rem;
+    /* Success / Warning */
+    --success:            150 100% 50%;
+    --success-foreground: 220 58% 7%;
+    --warning:            20 100% 60%;
+    --warning-foreground: 220 58% 7%;
 
-    --income: 160 84% 39%;
-    --expense: 0 84% 60%;
-    
-    --gradient-primary: linear-gradient(135deg, hsl(243 75% 59%), hsl(262 83% 58%));
-    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%), hsl(158 64% 52%));
-    
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* Shadcn radius */
+    --radius: 0.5rem;
+
+    /* Accent raw HSL values for inline usage */
+    --cyan:       190 100% 50%;
+    --violet:     265 100% 60%;
+    --warm:       20 100% 60%;
+    --neon-green: 150 100% 50%;
+    --danger:     345 100% 60%;
   }
 
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+  /* Force dark — this app is dark-mode only */
+  html { color-scheme: dark; }
 
-    --card: 222 47% 15%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 15%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 243 75% 59%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 262 83% 58%;
-    --secondary-foreground: 0 0% 100%;
-
-    --success: 160 84% 39%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 243 75% 59%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .font-mono, code, pre {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--cyan) / 0.4);
+  }
+}
+
+/* ── Utility Layer ────────────────────────────*/
+@layer utilities {
+
+  /* Glow variants */
+  .glow-cyan    { box-shadow: 0 0 20px rgba(0, 212, 255, 0.15); }
+  .glow-cyan-md { box-shadow: 0 0 30px rgba(0, 212, 255, 0.30); }
+  .glow-cyan-lg { box-shadow: 0 0 50px rgba(0, 212, 255, 0.40); }
+  .glow-violet    { box-shadow: 0 0 20px rgba(123, 47, 255, 0.12); }
+  .glow-violet-md { box-shadow: 0 0 30px rgba(123, 47, 255, 0.25); }
+  .glow-green     { box-shadow: 0 0 20px rgba(0, 255, 136, 0.15); }
+
+  /* Text glow */
+  .text-glow-cyan   { text-shadow: 0 0 12px rgba(0, 212, 255, 0.6); }
+  .text-glow-violet { text-shadow: 0 0 12px rgba(123, 47, 255, 0.6); }
+
+  /* Gradient text */
+  .gradient-text-cyan {
+    background: linear-gradient(135deg, #00D4FF 0%, #7B2FFF 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gradient-text-warm {
+    background: linear-gradient(135deg, #FF6B35 0%, #FFD700 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Glassmorphic card */
+  .glass-card {
+    background: hsl(var(--surface));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .glass-card-hover {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .glass-card-hover:hover {
+    border-color: hsl(var(--cyan) / 0.3);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.08);
+  }
+
+  /* Shimmer skeleton */
+  .skeleton {
+    background: hsl(var(--surface));
+    background-image: linear-gradient(
+      90deg,
+      transparent 20%,
+      hsl(var(--border)) 50%,
+      transparent 80%
+    );
+    background-size: 800px 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.8s linear infinite;
+    border-radius: 4px;
+  }
+
+  /* Agent status dot */
+  .agent-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  .agent-dot-active { background: #00FF88; box-shadow: 0 0 6px rgba(0,255,136,0.5); }
+  .agent-dot-busy   { background: #FF6B35; box-shadow: 0 0 6px rgba(255,107,53,0.5); }
+  .agent-dot-idle   { background: #6B8CAE; }
+
+  /* Page-in animation */
+  .page-in { animation: page-in 0.3s ease-out forwards; }
+
+  /* Mono data values */
+  .data-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Surface tier helpers */
+  .bg-surface   { background: hsl(var(--surface)); }
+  .bg-surface-2 { background: hsl(var(--surface-2)); }
+
+  /* Ticker strip */
+  .ticker-wrap {
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 8%,
+      black 92%,
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 8%,
+      black 92%,
+      transparent 100%
+    );
+  }
+  .ticker-inner {
+    display: inline-flex;
+    animation: ticker 40s linear infinite;
+  }
+
+  /* Neural Grid canvas parent */
+  .neural-grid-root {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .agent-dot,
+    .skeleton,
+    .page-in,
+    .ticker-inner,
+    .animate-pulse-dot { animation: none !important; }
+  }
+}
+
+/* ── Component overrides ──────────────────────*/
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:brightness-110 transition-all;
+    border: 1px solid hsl(var(--cyan) / 0.4);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.15);
+  }
+
+  .card-dark {
+    @apply bg-surface border border-border rounded-lg;
+  }
+
+  .table-row-dark {
+    @apply border-b border-border hover:bg-surface-2 transition-colors;
+  }
+
+  input, select, textarea {
+    border-radius: 4px !important;
   }
 }

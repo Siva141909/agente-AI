@@ -140,7 +140,7 @@ const Profile = () => {
 
       {/* Avatar + header */}
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-black shadow-lg">
+        <div className="w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-black" style={{ background: "rgba(0,212,255,0.15)", border: "1px solid rgba(0,212,255,0.35)", color: "#00D4FF" }}>
           {f.full_name?.charAt(0).toUpperCase() || "U"}
         </div>
         <div>
@@ -156,7 +156,7 @@ const Profile = () => {
       <Accordion type="multiple" defaultValue={["basic"]} className="space-y-3">
 
         {/* Basic Info */}
-        <AccordionItem value="basic" className="border rounded-2xl px-5 bg-card shadow-sm">
+        <AccordionItem value="basic" className="border rounded-lg px-5 bg-card shadow-sm">
           <AccordionTrigger className="hover:no-underline py-4">
             <div className="flex items-center gap-2 font-semibold">
               <User className="w-4 h-4 text-primary" /> Basic Information
@@ -200,7 +200,7 @@ const Profile = () => {
         </AccordionItem>
 
         {/* Financial Profile */}
-        <AccordionItem value="financial" className="border rounded-2xl px-5 bg-card shadow-sm">
+        <AccordionItem value="financial" className="border rounded-lg px-5 bg-card shadow-sm">
           <AccordionTrigger className="hover:no-underline py-4">
             <div className="flex items-center gap-2 font-semibold">
               <BarChart3 className="w-4 h-4 text-primary" /> Financial Profile
@@ -246,7 +246,7 @@ const Profile = () => {
         </AccordionItem>
 
         {/* Security */}
-        <AccordionItem value="security" className="border rounded-2xl px-5 bg-card shadow-sm">
+        <AccordionItem value="security" className="border rounded-lg px-5 bg-card shadow-sm">
           <AccordionTrigger className="hover:no-underline py-4">
             <div className="flex items-center gap-2 font-semibold">
               <ShieldCheck className="w-4 h-4 text-primary" /> Security
@@ -276,7 +276,7 @@ const Profile = () => {
                   </button>
                 </div>
                 {confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-xs text-red-500">Passwords do not match</p>
+                  <p className="text-xs" style={{ color: "#FF3366" }}>Passwords do not match</p>
                 )}
               </div>
               <Button onClick={handleChangePassword} disabled={isChangingPwd || !newPassword || newPassword !== confirmPassword} variant="outline">

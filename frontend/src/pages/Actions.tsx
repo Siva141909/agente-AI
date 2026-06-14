@@ -139,11 +139,11 @@ const Actions = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+        return <Badge style={{ background: "rgba(0,255,136,0.12)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.3)" }}>Completed</Badge>;
       case "active":
-        return <Badge className="bg-blue-100 text-blue-800">Active</Badge>;
+        return <Badge style={{ background: "rgba(0,212,255,0.10)", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.25)" }}>Active</Badge>;
       case "paused":
-        return <Badge className="bg-yellow-100 text-yellow-800">Paused</Badge>;
+        return <Badge style={{ background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" }}>Paused</Badge>;
       default:
         return <Badge variant="outline">Pending</Badge>;
     }
@@ -304,7 +304,7 @@ const Actions = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <CheckCircle className="w-5 h-5" style={{ color: "#00FF88" }} />
                         <h3 className="font-semibold">{action.action_description || action.action_type}</h3>
                       </div>
                       <p className="text-sm text-muted-foreground">

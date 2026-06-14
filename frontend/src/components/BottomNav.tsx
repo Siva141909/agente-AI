@@ -10,7 +10,7 @@ import TransactionModal from "@/components/TransactionModal";
 interface BadgeProps { count?: number }
 const NavBadge = ({ count }: BadgeProps) =>
   count ? (
-    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+    <span className="absolute -top-1 -right-1 w-4 h-4 text-white text-[10px] font-bold rounded-full flex items-center justify-center" style={{ background: "#FF3366" }}>
       {count > 9 ? "9+" : count}
     </span>
   ) : null;
@@ -44,9 +44,9 @@ const BottomNav = () => {
   ];
 
   const fabActions = [
-    { icon: Mic, label: "Speak", color: "from-blue-500 to-blue-600", action: () => { setFabOpen(false); setVoiceOpen(true); } },
-    { icon: Camera, label: "Scan", color: "from-purple-500 to-purple-600", action: () => { setFabOpen(false); setScanOpen(true); } },
-    { icon: PenLine, label: "Enter", color: "from-green-500 to-green-600", action: () => { setFabOpen(false); setTxOpen(true); } },
+    { icon: Mic, label: "Speak", bgStyle: { background: "rgba(0,212,255,0.15)", border: "1px solid rgba(0,212,255,0.3)", color: "#00D4FF" }, action: () => { setFabOpen(false); setVoiceOpen(true); } },
+    { icon: Camera, label: "Scan", bgStyle: { background: "rgba(123,47,255,0.15)", border: "1px solid rgba(123,47,255,0.3)", color: "#7B2FFF" }, action: () => { setFabOpen(false); setScanOpen(true); } },
+    { icon: PenLine, label: "Enter", bgStyle: { background: "rgba(0,255,136,0.12)", border: "1px solid rgba(0,255,136,0.3)", color: "#00FF88" }, action: () => { setFabOpen(false); setTxOpen(true); } },
   ];
 
   return (
@@ -72,7 +72,7 @@ const BottomNav = () => {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-16 left-0 right-0 z-50 bg-card border-t border-border rounded-t-2xl p-4 pb-6 shadow-2xl"
+            className="fixed bottom-16 left-0 right-0 z-50 bg-card border-t border-border rounded-t-lg p-4 pb-6 shadow-2xl"
           >
             <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-4" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">Financial Tools</p>
@@ -121,12 +121,13 @@ const BottomNav = () => {
             <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-5" />
             <p className="text-sm font-semibold text-muted-foreground text-center mb-4">How do you want to add?</p>
             <div className="grid grid-cols-3 gap-3">
-              {fabActions.map(({ icon: Icon, label, color, action }) => (
+              {fabActions.map(({ icon: Icon, label, bgStyle, action }) => (
                 <motion.button
                   key={label}
                   whileTap={{ scale: 0.95 }}
                   onClick={action}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl bg-gradient-to-br ${color} text-white shadow-lg`}
+                  className="flex flex-col items-center gap-2 p-4 rounded-lg shadow-lg"
+                  style={bgStyle}
                 >
                   <Icon className="w-6 h-6" />
                   <span className="text-sm font-semibold">{label}</span>
@@ -148,7 +149,8 @@ const BottomNav = () => {
                   key="fab"
                   whileTap={{ scale: 0.9 }}
                   onClick={() => { setMoreOpen(false); setFabOpen((v) => !v); }}
-                  className="relative -top-4 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary text-white shadow-lg flex items-center justify-center"
+                  className="relative -top-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center"
+                  style={{ background: "#00D4FF", color: "#070D1A", boxShadow: "0 0 20px rgba(0,212,255,0.4)" }}
                 >
                   <motion.div animate={{ rotate: fabOpen ? 45 : 0 }} transition={{ duration: 0.2 }}>
                     <Plus className="w-6 h-6" />

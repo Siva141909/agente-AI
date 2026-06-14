@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -24,6 +23,18 @@ const getGreeting = () => {
 };
 
 const periodLabel: Record<Period, string> = { today: "Today", week: "This Week", month: "This Month" };
+
+/* ── Inline style tokens ── */
+const S = {
+  surface:  "hsl(215 56% 12%)",
+  surface2: "hsl(215 49% 15%)",
+  border:   "hsl(210 46% 19%)",
+  cyan:     "#00D4FF",
+  green:    "#00FF88",
+  danger:   "#FF3366",
+  textPri:  "#E8F4FF",
+  textSec:  "#6B8CAE",
+};
 
 const Dashboard = () => {
   const { user, transactions, dailyGoal, goalProgress, isLoading, isAuthenticated, error } = useApp();
@@ -48,11 +59,10 @@ const Dashboard = () => {
     });
   }, [transactions, period]);
 
-  const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const expense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const income  = filtered.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const expense = filtered.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const net = income - expense;
 
-  // Compare with previous period for delta
   const prevFiltered = useMemo(() => {
     const now = new Date();
     return transactions.filter((t) => {
@@ -76,15 +86,14 @@ const Dashboard = () => {
     - prevFiltered.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const deltaAmt = net - prevNet;
   const deltaPositive = deltaAmt >= 0;
-
   const recentTxns = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 7);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">Loading your dashboard…</p>
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: S.cyan }} />
+          <p className="text-sm" style={{ color: S.textSec }}>Loading your command centre…</p>
         </div>
       </div>
     );
@@ -92,39 +101,60 @@ const Dashboard = () => {
 
   if (!user) return null;
 
-  const emoji = occupationEmoji[user.occupation || ""] || "💼";
+  const emoji = occupationEmoji[user.occupation ?? ""] ?? "💼";
 
   return (
-    <div className="space-y-6 pb-24 md:pb-8">
+    <div className="space-y-6 pb-24 md:pb-8 page-in">
+
+      {/* Error banner */}
       {error && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3 text-sm text-red-700 dark:text-red-300">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-lg p-3 text-sm"
+          style={{ background: "rgba(255,51,102,0.12)", border: "1px solid rgba(255,51,102,0.3)", color: S.danger }}
+        >
           {error}
         </motion.div>
       )}
 
       {/* Greeting + Period Toggle */}
-      <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between gap-4 flex-wrap">
+      <motion.div
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-start justify-between gap-4 flex-wrap"
+      >
         <div>
-          <p className="text-muted-foreground text-sm">{getGreeting()}</p>
-          <h1 className="text-3xl font-bold mt-0.5">{user.name?.split(" ")[0] || "User"} 👋</h1>
+          <p className="text-sm" style={{ color: S.textSec }}>{getGreeting()}</p>
+          <h1 className="text-3xl font-bold font-display mt-0.5" style={{ color: S.textPri }}>
+            {user.name?.split(" ")[0] ?? "User"} 👋
+          </h1>
           {user.occupation && (
-            <span className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-              {emoji} {user.occupation}{user.phone ? "" : ""}{user.occupation && (user as any).city ? ` · ${(user as any).city}` : ""}
+            <span
+              className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
+              style={{ background: "rgba(0,212,255,0.10)", border: "1px solid rgba(0,212,255,0.2)", color: S.cyan }}
+            >
+              {emoji} {user.occupation}
+              {(user as any).city ? ` · ${(user as any).city}` : ""}
             </span>
           )}
         </div>
 
         {/* Period pill toggle */}
-        <div className="flex bg-muted rounded-xl p-1 gap-0.5">
+        <div
+          className="flex rounded-lg p-1 gap-0.5"
+          style={{ background: S.surface }}
+        >
           {(["today", "week", "month"] as Period[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                period === p ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
+              className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
+              style={
+                period === p
+                  ? { background: S.surface2, color: S.textPri, boxShadow: "0 0 8px rgba(0,212,255,0.12)" }
+                  : { color: S.textSec }
+              }
             >
               {periodLabel[p]}
             </button>
@@ -133,119 +163,190 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Balance Card */}
-      <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 }}
-        whileHover={{ scale: 1.01, y: -3 }} className="group">
-        <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-primary via-primary to-secondary text-white p-7">
-          <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full -mr-36 -mt-36 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-secondary/20 rounded-full -ml-36 -mb-36 blur-3xl" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.05 }}
+        whileHover={{ scale: 1.01, y: -3 }}
+        className="group"
+      >
+        <div
+          className="relative overflow-hidden rounded-lg p-7"
+          style={{
+            background: S.surface,
+            border: "1px solid rgba(0,212,255,0.20)",
+            boxShadow: "0 0 30px rgba(0,212,255,0.08)",
+          }}
+        >
+          {/* Ambient cyan glow */}
+          <div
+            className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, rgba(0,212,255,0.07) 0%, transparent 70%)",
+              transform: "translate(30%, -30%)",
+            }}
+          />
           <div className="relative z-10">
-            <p className="text-xs font-semibold opacity-75 uppercase tracking-widest">Total Balance</p>
-            <p className="text-5xl font-black mt-1 mb-4">₹{user.balance?.toLocaleString("en-IN") ?? "0"}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: S.textSec }}>
+              Total Balance
+            </p>
+            <p className="text-5xl font-black mt-1 mb-4 font-display data-value" style={{ color: S.textPri }}>
+              ₹{user.balance?.toLocaleString("en-IN") ?? "0"}
+            </p>
             <div className="flex items-center gap-4">
               <div>
-                <p className="text-xs opacity-75">{periodLabel[period]} Net</p>
-                <p className="text-xl font-bold">{net >= 0 ? "+" : ""}₹{net.toLocaleString("en-IN")}</p>
+                <p className="text-xs" style={{ color: S.textSec }}>{periodLabel[period]} Net</p>
+                <p className="text-xl font-bold data-value" style={{ color: net >= 0 ? S.green : S.danger }}>
+                  {net >= 0 ? "+" : ""}₹{net.toLocaleString("en-IN")}
+                </p>
               </div>
               {prevNet !== 0 && (
-                <div className={cn("flex items-center gap-1 text-sm font-semibold px-2.5 py-1 rounded-full",
-                  deltaPositive ? "bg-white/20" : "bg-red-400/30")}>
+                <div
+                  className="flex items-center gap-1 text-sm font-semibold px-2.5 py-1 rounded-full"
+                  style={deltaPositive
+                    ? { background: "rgba(0,255,136,0.12)", color: S.green }
+                    : { background: "rgba(255,51,102,0.12)", color: S.danger }}
+                >
                   {deltaPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {deltaPositive ? "+" : ""}₹{Math.abs(deltaAmt).toLocaleString("en-IN")} vs last
                 </div>
               )}
             </div>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Income / Expense Stats */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { label: "Income", value: income, color: "text-green-600 dark:text-green-400", bg: "from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950", icon: TrendingUp },
-          { label: "Expenses", value: expense, color: "text-red-600 dark:text-red-400", bg: "from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950", icon: TrendingDown },
-        ].map(({ label, value, color, bg, icon: Icon }) => (
-          <motion.div key={label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            whileHover={{ scale: 1.03, y: -3 }}>
-            <Card className={`p-5 bg-gradient-to-br ${bg} border-0 shadow-md`}>
+          { label: "Income",   value: income,  color: S.green,  icon: TrendingUp,  glow: "rgba(0,255,136,0.08)" },
+          { label: "Expenses", value: expense, color: S.danger, icon: TrendingDown, glow: "rgba(255,51,102,0.08)" },
+        ].map(({ label, value, color, icon: Icon, glow }) => (
+          <motion.div
+            key={label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ scale: 1.03, y: -3 }}
+          >
+            <div
+              className="p-5 rounded-lg"
+              style={{ background: S.surface, border: `1px solid ${color}30`, boxShadow: `0 0 16px ${glow}` }}
+            >
               <div className="flex items-center gap-2 mb-1">
-                <Icon className={`w-4 h-4 ${color}`} />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+                <Icon className="w-4 h-4" style={{ color }} />
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: S.textSec }}>{label}</p>
               </div>
-              <p className={`text-2xl font-bold ${color}`}>₹{value.toLocaleString("en-IN")}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{periodLabel[period]}</p>
-            </Card>
+              <p className="text-2xl font-bold data-value" style={{ color }}>₹{value.toLocaleString("en-IN")}</p>
+              <p className="text-xs mt-0.5" style={{ color: S.textSec }}>{periodLabel[period]}</p>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Daily Goal (shown only for "today") */}
+      {/* Daily Goal */}
       {period === "today" && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <Card className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-0 shadow-md">
+          <div
+            className="p-5 rounded-lg"
+            style={{ background: S.surface, border: "1px solid rgba(0,212,255,0.15)" }}
+          >
             <div className="flex justify-between items-center mb-3">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Daily Savings Goal</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-0.5">₹{dailyGoal}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: S.textSec }}>
+                  Daily Savings Goal
+                </p>
+                <p className="text-2xl font-bold data-value mt-0.5" style={{ color: S.cyan }}>₹{dailyGoal}</p>
               </div>
               <span className="text-4xl">{goalProgress >= 100 ? "🎉" : "🎯"}</span>
             </div>
-            <Progress value={Math.min(goalProgress, 100)} className="h-2 mb-2" />
-            <p className="text-xs text-muted-foreground">
-              {goalProgress >= 100 ? "Goal achieved! Great work today!" : `${Math.round(goalProgress)}% of daily goal reached`}
+            <Progress value={Math.min(goalProgress, 100)} className="h-2 mb-2 [&>div]:bg-[#00D4FF]" />
+            <p className="text-xs" style={{ color: S.textSec }}>
+              {goalProgress >= 100
+                ? "Goal achieved! Great work today!"
+                : `${Math.round(goalProgress)}% of daily goal reached`}
             </p>
-          </Card>
+          </div>
         </motion.div>
       )}
 
       {/* Recent Transactions */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold">Recent Transactions</h2>
-          <button onClick={() => navigate("/transactions")}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+          <h2 className="text-lg font-bold font-display" style={{ color: S.textPri }}>Recent Transactions</h2>
+          <button
+            onClick={() => navigate("/transactions")}
+            className="flex items-center gap-1 text-xs font-semibold"
+            style={{ color: S.cyan }}
+          >
             View All <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {recentTxns.length === 0 ? (
-          <Card className="p-10 text-center border-0 shadow-md bg-muted/40">
+          <div
+            className="p-10 text-center rounded-lg"
+            style={{ background: S.surface, border: "1px solid hsl(210 46% 19%)" }}
+          >
             <div className="text-5xl mb-3">📊</div>
-            <p className="font-semibold text-foreground">No transactions yet</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Tap the + button to log your first earning or expense</p>
-          </Card>
+            <p className="font-semibold" style={{ color: S.textPri }}>No transactions yet</p>
+            <p className="text-sm mt-1" style={{ color: S.textSec }}>Tap the + button to log your first earning or expense</p>
+          </div>
         ) : (
-          <Card className="overflow-hidden border-0 shadow-md">
-            <div className="divide-y divide-border/50">
+          <div
+            className="overflow-hidden rounded-lg"
+            style={{ background: S.surface, border: "1px solid hsl(210 46% 19%)" }}
+          >
+            <div className="divide-y" style={{ borderColor: "hsl(210 46% 19%)" }}>
               {recentTxns.map((t, i) => (
-                <motion.div key={t.id}
-                  initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.22 + i * 0.04 }}
-                  className="flex items-center justify-between px-4 py-3.5 hover:bg-muted/40 transition-colors">
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.22 + i * 0.04 }}
+                  className="flex items-center justify-between px-4 py-3.5 transition-colors"
+                  style={{ borderBottom: "1px solid hsl(210 46% 19%)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = S.surface2)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold",
-                      t.type === "income"
-                        ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400"
-                        : "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400")}>
-                      {t.type === "income" ? "+" : "-"}
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
+                      style={
+                        t.type === "income"
+                          ? { background: "rgba(0,255,136,0.12)", color: S.green }
+                          : { background: "rgba(255,51,102,0.12)", color: S.danger }
+                      }
+                    >
+                      {t.type === "income" ? "+" : "−"}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{t.category}</p>
-                      <p className="text-xs text-muted-foreground">{t.date}{t.time ? ` · ${t.time}` : ""}</p>
+                      <p className="font-medium text-sm" style={{ color: S.textPri }}>{t.category}</p>
+                      <p className="text-xs" style={{ color: S.textSec }}>{t.date}{t.time ? ` · ${t.time}` : ""}</p>
                     </div>
                   </div>
-                  <p className={cn("font-bold text-sm",
-                    t.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
-                    {t.type === "income" ? "+" : "-"}₹{t.amount.toLocaleString("en-IN")}
+                  <p
+                    className="font-bold text-sm data-value"
+                    style={{ color: t.type === "income" ? S.green : S.danger }}
+                  >
+                    {t.type === "income" ? "+" : "−"}₹{t.amount.toLocaleString("en-IN")}
                   </p>
                 </motion.div>
               ))}
             </div>
-            <div className="px-4 py-3 bg-muted/30 text-center">
-              <button onClick={() => navigate("/transactions")}
-                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mx-auto">
+            <div
+              className="px-4 py-3 text-center"
+              style={{ background: S.surface2, borderTop: "1px solid hsl(210 46% 19%)" }}
+            >
+              <button
+                onClick={() => navigate("/transactions")}
+                className="text-xs font-semibold flex items-center gap-1 mx-auto"
+                style={{ color: S.cyan }}
+              >
                 See all transactions <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-          </Card>
+          </div>
         )}
       </motion.div>
     </div>

@@ -1,21 +1,29 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
-import { Plus, Edit, Trash2, Home, X, Loader2 } from "lucide-react";
+import { Plus, Edit, X, Loader2 } from "lucide-react";
 import { SkeletonCard, SkeletonStat } from "@/components/ui/skeleton-card";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import db from "@/services/database";
 import { toast } from "sonner";
-import { format, addDays, addMonths } from "date-fns";
+import { format, addMonths } from "date-fns";
 import PageIntro from "@/components/PageIntro";
 import HelpTooltip from "@/components/HelpTooltip";
+
+const S = {
+  surface:  "hsl(215 56% 12%)",
+  surface2: "hsl(215 49% 15%)",
+  border:   "hsl(210 46% 19%)",
+  cyan:     "#00D4FF",
+  green:    "#00FF88",
+  danger:   "#FF3366",
+  textPri:  "#E8F4FF",
+  textSec:  "#6B8CAE",
+};
 
 const Budget = () => {
   const navigate = useNavigate();
@@ -37,26 +45,12 @@ const Budget = () => {
     category_limits: [] as Array<{ category: string; limit: string }>,
   });
 
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (activeBudget) loadTransactionsForBudget(); }, [activeBudget?.budget_id]);
   useEffect(() => {
-    loadData();
-  }, []);
-
-  // Reload transactions when active budget changes
-  useEffect(() => {
-    if (activeBudget) {
-      loadTransactionsForBudget();
-    }
-  }, [activeBudget?.budget_id]);
-
-  // Listen for focus events to refresh data when user returns to page
-  useEffect(() => {
-    const handleFocus = () => {
-      if (activeBudget) {
-        loadTransactionsForBudget();
-      }
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    const handle = () => { if (activeBudget) loadTransactionsForBudget(); };
+    window.addEventListener("focus", handle);
+    return () => window.removeEventListener("focus", handle);
   }, [activeBudget]);
 
   const loadData = async () => {
@@ -64,19 +58,12 @@ const Budget = () => {
       setIsLoading(true);
       const budgetsData = await db.budgets.getAll();
       setBudgets(budgetsData);
-      
       const active = await db.budgets.getActive();
       setActiveBudget(active);
-      
-      // Load transactions for the active budget
-      if (active) {
-        await loadTransactionsForBudget(active);
-      } else {
-        // If no active budget, load recent transactions
-        const transactionsData = await db.transactions.getAll({
-          date_start: format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-        });
-        setTransactions(transactionsData);
+      if (active) await loadTransactionsForBudget(active);
+      else {
+        const tData = await db.transactions.getAll({ date_start: format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd") });
+        setTransactions(tData);
       }
     } catch (error) {
       console.error("Failed to load budget data:", error);
@@ -87,166 +74,62 @@ const Budget = () => {
   };
 
   const loadTransactionsForBudget = async (budget?: any) => {
-    const targetBudget = budget || activeBudget;
-    if (!targetBudget) return;
-
+    const b = budget || activeBudget;
+    if (!b) return;
     try {
-      // Load transactions within the budget's date range
-      const transactionsData = await db.transactions.getAll({
-        date_start: format(new Date(targetBudget.valid_from), "yyyy-MM-dd"),
-        date_end: format(new Date(targetBudget.valid_until), "yyyy-MM-dd"),
+      const data = await db.transactions.getAll({
+        date_start: format(new Date(b.valid_from), "yyyy-MM-dd"),
+        date_end: format(new Date(b.valid_until), "yyyy-MM-dd"),
       });
-      setTransactions(transactionsData);
-    } catch (error) {
-      console.error("Failed to load transactions for budget:", error);
-    }
+      setTransactions(data);
+    } catch {}
   };
 
-  // Calculate actual spending from transactions (case-insensitive category matching)
   const calculateActualSpending = (category: string) => {
     if (!category) return 0;
-    return transactions
-      .filter((t) => {
-        if (t.transaction_type !== "expense") return false;
-        // Case-insensitive category matching
-        const transactionCategory = (t.category || "").toLowerCase().trim();
-        const budgetCategory = category.toLowerCase().trim();
-        return transactionCategory === budgetCategory;
-      })
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    return transactions.filter(t => t.transaction_type === "expense" && (t.category || "").toLowerCase().trim() === category.toLowerCase().trim()).reduce((s, t) => s + Number(t.amount || 0), 0);
   };
 
-  // Initialize form when editing
   useEffect(() => {
     if (activeBudget && isEditOpen) {
-      // Safely parse dates
       let validFrom = format(new Date(), "yyyy-MM-dd");
       let validUntil = format(addMonths(new Date(), 1), "yyyy-MM-dd");
-      
       try {
-        if (activeBudget.valid_from) {
-          const fromDate = typeof activeBudget.valid_from === 'string' 
-            ? new Date(activeBudget.valid_from) 
-            : activeBudget.valid_from;
-          if (!isNaN(fromDate.getTime())) {
-            validFrom = format(fromDate, "yyyy-MM-dd");
-          }
-        }
-        if (activeBudget.valid_until) {
-          const untilDate = typeof activeBudget.valid_until === 'string' 
-            ? new Date(activeBudget.valid_until) 
-            : activeBudget.valid_until;
-          if (!isNaN(untilDate.getTime())) {
-            validUntil = format(untilDate, "yyyy-MM-dd");
-          }
-        }
-      } catch (e) {
-        console.warn("Error parsing dates:", e);
-      }
-
+        if (activeBudget.valid_from) { const d = new Date(activeBudget.valid_from); if (!isNaN(d.getTime())) validFrom = format(d, "yyyy-MM-dd"); }
+        if (activeBudget.valid_until) { const d = new Date(activeBudget.valid_until); if (!isNaN(d.getTime())) validUntil = format(d, "yyyy-MM-dd"); }
+      } catch {}
       setFormData({
         budget_type: activeBudget.budget_type || "monthly",
-        valid_from: validFrom,
-        valid_until: validUntil,
+        valid_from: validFrom, valid_until: validUntil,
         total_income_expected: String(activeBudget.total_income_expected || ""),
         savings_target: String(activeBudget.savings_target || ""),
         discretionary_budget: String(activeBudget.discretionary_budget || ""),
-        fixed_costs: Object.entries(activeBudget.fixed_costs || {}).map(([name, amount]) => ({
-          name,
-          amount: String(amount),
-        })),
-        variable_costs: Object.entries(activeBudget.variable_costs || {}).map(([category, amount]) => ({
-          category,
-          amount: String(amount),
-        })),
-        category_limits: Object.entries(activeBudget.category_limits || {}).map(([category, limit]) => ({
-          category,
-          limit: String(limit),
-        })),
+        fixed_costs: Object.entries(activeBudget.fixed_costs || {}).map(([name, amount]) => ({ name, amount: String(amount) })),
+        variable_costs: Object.entries(activeBudget.variable_costs || {}).map(([category, amount]) => ({ category, amount: String(amount) })),
+        category_limits: Object.entries(activeBudget.category_limits || {}).map(([category, limit]) => ({ category, limit: String(limit) })),
       });
     } else if (!activeBudget && isEditOpen) {
-      // Reset form for new budget
-      setFormData({
-        budget_type: "monthly",
-        valid_from: format(new Date(), "yyyy-MM-dd"),
-        valid_until: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
-        total_income_expected: "",
-        savings_target: "",
-        discretionary_budget: "",
-        fixed_costs: [],
-        variable_costs: [],
-        category_limits: [],
-      });
+      setFormData({ budget_type: "monthly", valid_from: format(new Date(), "yyyy-MM-dd"), valid_until: format(addMonths(new Date(), 1), "yyyy-MM-dd"), total_income_expected: "", savings_target: "", discretionary_budget: "", fixed_costs: [], variable_costs: [], category_limits: [] });
     }
   }, [activeBudget, isEditOpen]);
 
   const handleSaveBudget = async () => {
-    if (!formData.total_income_expected || !formData.valid_from || !formData.valid_until) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
+    if (!formData.total_income_expected || !formData.valid_from || !formData.valid_until) { toast.error("Fill in all required fields"); return; }
     try {
       setIsSaving(true);
-
-      // Convert form data to budget format
       const fixedCostsObj: Record<string, number> = {};
-      formData.fixed_costs.forEach((cost) => {
-        if (cost.name && cost.amount) {
-          fixedCostsObj[cost.name] = parseFloat(cost.amount);
-        }
-      });
-
+      formData.fixed_costs.forEach(c => { if (c.name && c.amount) fixedCostsObj[c.name] = parseFloat(c.amount); });
       const variableCostsObj: Record<string, number> = {};
-      formData.variable_costs.forEach((cost) => {
-        if (cost.category && cost.amount) {
-          variableCostsObj[cost.category] = parseFloat(cost.amount);
-        }
-      });
-
+      formData.variable_costs.forEach(c => { if (c.category && c.amount) variableCostsObj[c.category] = parseFloat(c.amount); });
       const categoryLimitsObj: Record<string, number> = {};
-      formData.category_limits.forEach((limit) => {
-        if (limit.category && limit.limit) {
-          categoryLimitsObj[limit.category] = parseFloat(limit.limit);
-        }
-      });
-
-      if (activeBudget) {
-        // Update existing budget
-        await db.budgets.update(activeBudget.budget_id, {
-          budget_type: formData.budget_type,
-          valid_from: formData.valid_from,
-          valid_until: formData.valid_until,
-          total_income_expected: parseFloat(formData.total_income_expected),
-          fixed_costs: fixedCostsObj,
-          variable_costs: variableCostsObj,
-          savings_target: formData.savings_target ? parseFloat(formData.savings_target) : 0,
-          discretionary_budget: formData.discretionary_budget ? parseFloat(formData.discretionary_budget) : 0,
-          category_limits: categoryLimitsObj,
-        });
-        toast.success("Budget updated successfully!");
-      } else {
-        // Create new budget
-        await db.budgets.create({
-          budget_type: formData.budget_type,
-          valid_from: formData.valid_from,
-          valid_until: formData.valid_until,
-          total_income_expected: parseFloat(formData.total_income_expected),
-          fixed_costs: fixedCostsObj,
-          variable_costs: variableCostsObj,
-          savings_target: formData.savings_target ? parseFloat(formData.savings_target) : 0,
-          discretionary_budget: formData.discretionary_budget ? parseFloat(formData.discretionary_budget) : 0,
-          category_limits: categoryLimitsObj,
-          is_active: true,
-        });
-        toast.success("Budget created successfully!");
-      }
-
+      formData.category_limits.forEach(l => { if (l.category && l.limit) categoryLimitsObj[l.category] = parseFloat(l.limit); });
+      const payload = { budget_type: formData.budget_type, valid_from: formData.valid_from, valid_until: formData.valid_until, total_income_expected: parseFloat(formData.total_income_expected), fixed_costs: fixedCostsObj, variable_costs: variableCostsObj, savings_target: formData.savings_target ? parseFloat(formData.savings_target) : 0, discretionary_budget: formData.discretionary_budget ? parseFloat(formData.discretionary_budget) : 0, category_limits: categoryLimitsObj };
+      if (activeBudget) { await db.budgets.update(activeBudget.budget_id, payload); toast.success("Budget updated!"); }
+      else { await db.budgets.create({ ...payload, is_active: true }); toast.success("Budget created!"); }
       setIsEditOpen(false);
-      await loadData(); // Reload budgets
+      await loadData();
     } catch (error) {
-      console.error("Failed to save budget:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save budget");
+      toast.error(error instanceof Error ? error.message : "Failed to save");
     } finally {
       setIsSaving(false);
     }
@@ -264,474 +147,281 @@ const Budget = () => {
   const fixedCosts = (activeBudget?.fixed_costs || {}) as Record<string, number>;
   const variableCosts = (activeBudget?.variable_costs || {}) as Record<string, number>;
   const categoryLimits = (activeBudget?.category_limits || {}) as Record<string, number>;
-
-  const totalFixed = Object.values(fixedCosts).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
-  const totalVariable = Object.values(variableCosts).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
+  const totalFixed = Object.values(fixedCosts).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+  const totalVariable = Object.values(variableCosts).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
   const totalExpenses = totalFixed + totalVariable;
-  const savings = (activeBudget?.total_income_expected || 0) - totalExpenses;
 
   return (
-    <div className="space-y-6">
-        {/* Header */}
+    <div className="space-y-6 page-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} title="Back to Home">
-            <Home className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Budget Management</h1>
-            <p className="text-muted-foreground">Plan and track your spending</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold font-display" style={{ color: S.textPri }}>Budget Management</h1>
+          <p className="text-sm" style={{ color: S.textSec }}>Plan and track your spending</p>
         </div>
-        <Button onClick={() => setIsEditOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Budget
+        <Button onClick={() => setIsEditOpen(true)} style={{ background: S.cyan, color: "#070D1A" }}>
+          <Plus className="w-4 h-4 mr-2" />Create Budget
         </Button>
       </div>
 
       {/* Budget Selector */}
-      <Card className="p-4">
-        <Select
-          value={activeBudget?.budget_id || ""}
-          onValueChange={(id) => {
-            const budget = budgets.find((b) => b.budget_id === id);
-            setActiveBudget(budget || null);
-          }}
-        >
-          <SelectTrigger className="w-full md:w-[300px]">
+      <div className="p-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+        <Select value={activeBudget?.budget_id || ""} onValueChange={(id) => setActiveBudget(budgets.find(b => b.budget_id === id) || null)}>
+          <SelectTrigger className="w-full md:w-[300px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
             <SelectValue placeholder="Select a budget" />
           </SelectTrigger>
-          <SelectContent>
-            {budgets.map((budget) => (
-              <SelectItem key={budget.budget_id} value={budget.budget_id}>
-                {budget.budget_type || "Budget"} - {format(new Date(budget.valid_from), "MMM dd")} to{" "}
-                {format(new Date(budget.valid_until), "MMM dd")}
+          <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+            {budgets.map(b => (
+              <SelectItem key={b.budget_id} value={b.budget_id}>
+                {b.budget_type || "Budget"} — {format(new Date(b.valid_from), "MMM dd")} to {format(new Date(b.valid_until), "MMM dd")}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </Card>
+      </div>
 
       {activeBudget ? (
         <>
-          {/* Budget Header with Edit Button */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">
-                {activeBudget.budget_type || "Budget"} Budget
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(activeBudget.valid_from), "MMM dd, yyyy")} - {format(new Date(activeBudget.valid_until), "MMM dd, yyyy")}
-              </p>
+              <h2 className="text-xl font-semibold font-display" style={{ color: S.textPri }}>{activeBudget.budget_type || "Budget"} Budget</h2>
+              <p className="text-sm" style={{ color: S.textSec }}>{format(new Date(activeBudget.valid_from), "MMM dd, yyyy")} – {format(new Date(activeBudget.valid_until), "MMM dd, yyyy")}</p>
             </div>
-            <Button variant="outline" onClick={() => setIsEditOpen(true)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Budget
+            <Button variant="outline" onClick={() => setIsEditOpen(true)} style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+              <Edit className="w-4 h-4 mr-2" />Edit Budget
             </Button>
           </div>
 
-        {/* Summary Cards */}
+          {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">Expected Income</p>
-              <p className="text-2xl font-bold text-green-600">
-                ₹{Number(activeBudget.total_income_expected || 0).toLocaleString("en-IN")}
-              </p>
-            </Card>
-            <Card className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">Total Expenses</p>
-              <p className="text-2xl font-bold text-red-600">
-                ₹{totalExpenses.toLocaleString("en-IN")}
-              </p>
-            </Card>
-            <Card className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">Savings Target</p>
-              <p className="text-2xl font-bold">
-                ₹{Number(activeBudget.savings_target || 0).toLocaleString("en-IN")}
-              </p>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center gap-1.5 mb-2">
-                <p className="text-sm text-muted-foreground">Discretionary</p>
-                <HelpTooltip text="Money left after fixed bills and basics. This is the flexible amount you can choose how to use." />
+            {[
+              { label: "Expected Income",   value: activeBudget.total_income_expected || 0, color: S.green },
+              { label: "Total Expenses",    value: totalExpenses,                           color: S.danger },
+              { label: "Savings Target",    value: activeBudget.savings_target || 0,        color: S.cyan },
+              { label: "Discretionary",     value: activeBudget.discretionary_budget || 0,  color: S.textPri },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+                <p className="text-sm mb-2" style={{ color: S.textSec }}>{label}</p>
+                <p className="text-2xl font-bold data-value font-display" style={{ color }}>₹{Number(value).toLocaleString("en-IN")}</p>
               </div>
-              <p className="text-2xl font-bold">
-                ₹{Number(activeBudget.discretionary_budget || 0).toLocaleString("en-IN")}
-              </p>
-            </Card>
+            ))}
           </div>
 
           {/* Fixed Costs */}
-          <Card className="p-6">
-            <div className="flex items-center gap-1.5 mb-4">
-              <h3 className="text-lg font-semibold">Fixed Costs</h3>
-              <HelpTooltip text="Bills that stay almost the same every month, like rent or EMIs." />
-            </div>
-            <div className="space-y-3">
-              {Object.entries(fixedCosts).map(([name, amount]) => (
-                <div key={name} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{name}</p>
-                  </div>
-                  <p className="font-semibold">₹{Number(amount).toLocaleString("en-IN")}</p>
-                </div>
-              ))}
-              {Object.keys(fixedCosts).length === 0 && (
-                <p className="text-muted-foreground text-center py-4">No fixed costs defined</p>
-              )}
-            </div>
-          </Card>
+          <BudgetSection title="Fixed Costs" tooltip="Bills that stay almost the same every month, like rent or EMIs.">
+            {Object.entries(fixedCosts).map(([name, amount]) => (
+              <div key={name} className="flex items-center justify-between p-3 rounded-lg" style={{ background: S.surface2 }}>
+                <p className="font-medium" style={{ color: S.textPri }}>{name}</p>
+                <p className="font-semibold data-value" style={{ color: S.textSec }}>₹{Number(amount).toLocaleString("en-IN")}</p>
+              </div>
+            ))}
+            {Object.keys(fixedCosts).length === 0 && <p className="text-center py-4" style={{ color: S.textSec }}>No fixed costs defined</p>}
+          </BudgetSection>
 
           {/* Variable Costs */}
-          <Card className="p-6">
-            <div className="flex items-center gap-1.5 mb-4">
-              <h3 className="text-lg font-semibold">Variable Costs</h3>
-              <HelpTooltip text="Spending that changes month to month, like fuel, food, or shopping." />
-            </div>
-            <div className="space-y-3">
-              {Object.entries(variableCosts).map(([category, amount]) => {
-                const actual = calculateActualSpending(category);
-                const amountNum = Number(amount) || 0;
-                const percentage = amountNum > 0 ? (actual / amountNum) * 100 : 0;
-                const isOverBudget = percentage > 100;
-                return (
-                  <div key={category} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{category}</span>
-                      <span className={`text-sm ${isOverBudget ? "text-red-600 font-semibold" : "text-muted-foreground"}`}>
-                        ₹{actual.toLocaleString("en-IN")} / ₹{amountNum.toLocaleString("en-IN")}
-                        {isOverBudget && " (Over budget!)"}
-                      </span>
-            </div>
-                    <Progress 
-                      value={Math.min(percentage, 100)} 
-                      className={`h-2 ${isOverBudget ? "[&>div]:bg-red-600" : ""}`}
-                    />
-            </div>
-                );
-              })}
-              {Object.keys(variableCosts).length === 0 && (
-                <p className="text-muted-foreground text-center py-4">No variable costs defined</p>
-              )}
-            </div>
-          </Card>
-
-          {/* Category Limits */}
-          <Card className="p-6">
-            <div className="flex items-center gap-1.5 mb-4">
-              <h3 className="text-lg font-semibold">Category Limits</h3>
-              <HelpTooltip text="Maximum amount you plan to spend in each category for this period." />
-            </div>
-            <div className="space-y-3">
-              {Object.entries(categoryLimits).map(([category, limit]: [string, any]) => {
-                const actual = calculateActualSpending(category);
-                const limitNum = Number(limit) || 0;
-                const percentage = limitNum > 0 ? (actual / limitNum) * 100 : 0;
-                const isOverBudget = percentage > 100;
-                return (
-                  <div key={category} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{category}</span>
-                      <span className={`text-sm ${isOverBudget ? "text-red-600 font-semibold" : "text-muted-foreground"}`}>
-                        ₹{actual.toLocaleString("en-IN")} / ₹{limitNum.toLocaleString("en-IN")}
-                        {isOverBudget && " (Over limit!)"}
-                </span>
-              </div>
-                    <Progress 
-                      value={Math.min(percentage, 100)} 
-                      className={`h-2 ${isOverBudget ? "[&>div]:bg-red-600" : ""}`}
+          <BudgetSection title="Variable Costs" tooltip="Spending that changes month to month, like fuel, food, or shopping.">
+            {Object.entries(variableCosts).map(([category, amount]) => {
+              const actual = calculateActualSpending(category);
+              const amountNum = Number(amount) || 0;
+              const pct = amountNum > 0 ? (actual / amountNum) * 100 : 0;
+              const over = pct > 100;
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium" style={{ color: S.textPri }}>{category}</span>
+                    <span className="text-sm" style={{ color: over ? S.danger : S.textSec }}>
+                      ₹{actual.toLocaleString("en-IN")} / ₹{amountNum.toLocaleString("en-IN")}
+                      {over && " (Over budget!)"}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full" style={{ background: S.surface2 }}>
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(pct, 100)}%`, background: over ? S.danger : S.cyan }}
                     />
                   </div>
-                );
-              })}
-              {Object.keys(categoryLimits).length === 0 && (
-                <p className="text-muted-foreground text-center py-4">No category limits defined</p>
-              )}
-            </div>
-          </Card>
+                </div>
+              );
+            })}
+            {Object.keys(variableCosts).length === 0 && <p className="text-center py-4" style={{ color: S.textSec }}>No variable costs defined</p>}
+          </BudgetSection>
+
+          {/* Category Limits */}
+          <BudgetSection title="Category Limits" tooltip="Maximum amount you plan to spend in each category for this period.">
+            {Object.entries(categoryLimits).map(([category, limit]) => {
+              const actual = calculateActualSpending(category);
+              const limitNum = Number(limit) || 0;
+              const pct = limitNum > 0 ? (actual / limitNum) * 100 : 0;
+              const over = pct > 100;
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium" style={{ color: S.textPri }}>{category}</span>
+                    <span className="text-sm" style={{ color: over ? S.danger : S.textSec }}>
+                      ₹{actual.toLocaleString("en-IN")} / ₹{limitNum.toLocaleString("en-IN")}
+                      {over && " (Over limit!)"}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full" style={{ background: S.surface2 }}>
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(pct, 100)}%`, background: over ? S.danger : S.violet }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {Object.keys(categoryLimits).length === 0 && <p className="text-center py-4" style={{ color: S.textSec }}>No category limits defined</p>}
+          </BudgetSection>
         </>
       ) : (
-        <Card className="p-12 text-center">
-          <p className="text-lg font-semibold mb-2">No active budget</p>
-          <p className="text-muted-foreground mb-4">Create a budget to start tracking your spending</p>
-          <Button onClick={() => setIsEditOpen(true)}>Create Budget</Button>
-          </Card>
+        <div className="p-12 text-center rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+          <p className="text-lg font-semibold mb-2" style={{ color: S.textPri }}>No active budget</p>
+          <p className="mb-4" style={{ color: S.textSec }}>Create a budget to start tracking your spending</p>
+          <Button onClick={() => setIsEditOpen(true)} style={{ background: S.cyan, color: "#070D1A" }}>Create Budget</Button>
+        </div>
       )}
 
-      {/* Create/Edit Budget Dialog */}
+      {/* Create/Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           <DialogHeader>
-            <DialogTitle>{activeBudget ? "Edit Budget" : "Create Budget"}</DialogTitle>
-            <DialogDescription>
-              Set up your budget for the selected period. Define your income, expenses, and savings goals.
-            </DialogDescription>
+            <DialogTitle style={{ color: S.textPri }}>{activeBudget ? "Edit Budget" : "Create Budget"}</DialogTitle>
+            <DialogDescription style={{ color: S.textSec }}>Define your income, expenses, and savings goals.</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Budget Type *</Label>
-                <Select
-                  value={formData.budget_type}
-                  onValueChange={(v) => setFormData({ ...formData, budget_type: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="feast_famine">Feast/Famine</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
+                <Label style={{ color: S.textSec }}>Budget Type *</Label>
+                <Select value={formData.budget_type} onValueChange={(v) => setFormData({ ...formData, budget_type: v })}>
+                  <SelectTrigger style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}><SelectValue /></SelectTrigger>
+                  <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+                    {["monthly", "weekly", "feast_famine", "custom"].map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", "/")}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Expected Income (₹) *</Label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={formData.total_income_expected}
-                  onChange={(e) => setFormData({ ...formData, total_income_expected: e.target.value })}
-                />
+                <Label style={{ color: S.textSec }}>Expected Income (₹) *</Label>
+                <Input type="number" placeholder="0" value={formData.total_income_expected} onChange={(e) => setFormData({ ...formData, total_income_expected: e.target.value })} />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Valid From *</Label>
-                <Input
-                  type="date"
-                  value={formData.valid_from}
-                  onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
-                />
+                <Label style={{ color: S.textSec }}>Valid From *</Label>
+                <Input type="date" value={formData.valid_from} onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Valid Until *</Label>
-                <Input
-                  type="date"
-                  value={formData.valid_until}
-                  onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                />
-                    </div>
-                  </div>
-
+                <Label style={{ color: S.textSec }}>Valid Until *</Label>
+                <Input type="date" value={formData.valid_until} onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })} />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Savings Target (₹)</Label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={formData.savings_target}
-                  onChange={(e) => setFormData({ ...formData, savings_target: e.target.value })}
-                />
+                <Label style={{ color: S.textSec }}>Savings Target (₹)</Label>
+                <Input type="number" placeholder="0" value={formData.savings_target} onChange={(e) => setFormData({ ...formData, savings_target: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
-                  <Label>Discretionary Budget (₹)</Label>
-                  <HelpTooltip text="Money left after fixed bills and basics. This is the flexible amount you can choose how to use." />
+                  <Label style={{ color: S.textSec }}>Discretionary (₹)</Label>
+                  <HelpTooltip text="Money left after fixed bills and basics." />
                 </div>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={formData.discretionary_budget}
-                  onChange={(e) => setFormData({ ...formData, discretionary_budget: e.target.value })}
-                />
-                    </div>
-                  </div>
-
-            {/* Fixed Costs */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Label>Fixed Costs</Label>
-                  <HelpTooltip text="Bills that stay almost the same every month, like rent or EMIs." />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData({
-                    ...formData,
-                    fixed_costs: [...formData.fixed_costs, { name: "", amount: "" }]
-                  })}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add
-                </Button>
-                </div>
-              {formData.fixed_costs.map((cost, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <Input
-                    placeholder="Cost name (e.g., Rent)"
-                    value={cost.name}
-                    onChange={(e) => {
-                      const newCosts = [...formData.fixed_costs];
-                      newCosts[idx].name = e.target.value;
-                      setFormData({ ...formData, fixed_costs: newCosts });
-                    }}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Amount"
-                    value={cost.amount}
-                    onChange={(e) => {
-                      const newCosts = [...formData.fixed_costs];
-                      newCosts[idx].amount = e.target.value;
-                      setFormData({ ...formData, fixed_costs: newCosts });
-                    }}
-                    className="w-32"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      const newCosts = formData.fixed_costs.filter((_, i) => i !== idx);
-                      setFormData({ ...formData, fixed_costs: newCosts });
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                  </div>
-              ))}
+                <Input type="number" placeholder="0" value={formData.discretionary_budget} onChange={(e) => setFormData({ ...formData, discretionary_budget: e.target.value })} />
+              </div>
             </div>
 
-            {/* Variable Costs */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Label>Variable Costs</Label>
-                  <HelpTooltip text="Spending that changes month to month, like fuel, food, or shopping." />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData({
-                    ...formData,
-                    variable_costs: [...formData.variable_costs, { category: "", amount: "" }]
-                  })}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add
-                </Button>
-              </div>
-              {formData.variable_costs.map((cost, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <Input
-                    placeholder="Category (e.g., Food)"
-                    value={cost.category}
-                    onChange={(e) => {
-                      const newCosts = [...formData.variable_costs];
-                      newCosts[idx].category = e.target.value;
-                      setFormData({ ...formData, variable_costs: newCosts });
-                    }}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Amount"
-                    value={cost.amount}
-                    onChange={(e) => {
-                      const newCosts = [...formData.variable_costs];
-                      newCosts[idx].amount = e.target.value;
-                      setFormData({ ...formData, variable_costs: newCosts });
-                    }}
-                    className="w-32"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      const newCosts = formData.variable_costs.filter((_, i) => i !== idx);
-                      setFormData({ ...formData, variable_costs: newCosts });
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+            {/* Fixed costs builder */}
+            <FormListSection
+              title="Fixed Costs"
+              tooltip="Bills that stay almost the same every month."
+              items={formData.fixed_costs}
+              onAdd={() => setFormData({ ...formData, fixed_costs: [...formData.fixed_costs, { name: "", amount: "" }] })}
+              onRemove={(i) => setFormData({ ...formData, fixed_costs: formData.fixed_costs.filter((_, x) => x !== i) })}
+              renderRow={(item, i) => (
+                <>
+                  <Input placeholder="Cost name (e.g., Rent)" value={item.name} onChange={(e) => { const n = [...formData.fixed_costs]; n[i].name = e.target.value; setFormData({ ...formData, fixed_costs: n }); }} className="flex-1" />
+                  <Input type="number" placeholder="Amount" value={item.amount} onChange={(e) => { const n = [...formData.fixed_costs]; n[i].amount = e.target.value; setFormData({ ...formData, fixed_costs: n }); }} className="w-32" />
+                </>
+              )}
+            />
 
-            {/* Category Limits */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Label>Category Limits</Label>
-                  <HelpTooltip text="Maximum amount you plan to spend in each category for this period." />
-              </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData({
-                    ...formData,
-                    category_limits: [...formData.category_limits, { category: "", limit: "" }]
-                  })}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add
-                </Button>
-            </div>
-              {formData.category_limits.map((limit, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <Input
-                    placeholder="Category (e.g., Groceries)"
-                    value={limit.category}
-                    onChange={(e) => {
-                      const newLimits = [...formData.category_limits];
-                      newLimits[idx].category = e.target.value;
-                      setFormData({ ...formData, category_limits: newLimits });
-                    }}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Limit"
-                    value={limit.limit}
-                    onChange={(e) => {
-                      const newLimits = [...formData.category_limits];
-                      newLimits[idx].limit = e.target.value;
-                      setFormData({ ...formData, category_limits: newLimits });
-                    }}
-                    className="w-32"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      const newLimits = formData.category_limits.filter((_, i) => i !== idx);
-                      setFormData({ ...formData, category_limits: newLimits });
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-              </div>
-              ))}
-            </div>
+            {/* Variable costs builder */}
+            <FormListSection
+              title="Variable Costs"
+              tooltip="Spending that changes month to month."
+              items={formData.variable_costs}
+              onAdd={() => setFormData({ ...formData, variable_costs: [...formData.variable_costs, { category: "", amount: "" }] })}
+              onRemove={(i) => setFormData({ ...formData, variable_costs: formData.variable_costs.filter((_, x) => x !== i) })}
+              renderRow={(item, i) => (
+                <>
+                  <Input placeholder="Category (e.g., Food)" value={item.category} onChange={(e) => { const n = [...formData.variable_costs]; n[i].category = e.target.value; setFormData({ ...formData, variable_costs: n }); }} className="flex-1" />
+                  <Input type="number" placeholder="Amount" value={item.amount} onChange={(e) => { const n = [...formData.variable_costs]; n[i].amount = e.target.value; setFormData({ ...formData, variable_costs: n }); }} className="w-32" />
+                </>
+              )}
+            />
+
+            {/* Category limits builder */}
+            <FormListSection
+              title="Category Limits"
+              tooltip="Max you plan to spend per category."
+              items={formData.category_limits}
+              onAdd={() => setFormData({ ...formData, category_limits: [...formData.category_limits, { category: "", limit: "" }] })}
+              onRemove={(i) => setFormData({ ...formData, category_limits: formData.category_limits.filter((_, x) => x !== i) })}
+              renderRow={(item, i) => (
+                <>
+                  <Input placeholder="Category" value={item.category} onChange={(e) => { const n = [...formData.category_limits]; n[i].category = e.target.value; setFormData({ ...formData, category_limits: n }); }} className="flex-1" />
+                  <Input type="number" placeholder="Limit" value={item.limit} onChange={(e) => { const n = [...formData.category_limits]; n[i].limit = e.target.value; setFormData({ ...formData, category_limits: n }); }} className="w-32" />
+                </>
+              )}
+            />
 
             <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={() => setIsEditOpen(false)} className="flex-1">
-                Cancel
+              <Button variant="outline" onClick={() => setIsEditOpen(false)} className="flex-1">Cancel</Button>
+              <Button onClick={handleSaveBudget} disabled={isSaving || !formData.total_income_expected} className="flex-1" style={{ background: S.cyan, color: "#070D1A" }}>
+                {isSaving ? "Saving…" : activeBudget ? "Update Budget" : "Create Budget"}
               </Button>
-              <Button
-                onClick={handleSaveBudget}
-                disabled={isSaving || !formData.total_income_expected || !formData.valid_from || !formData.valid_until}
-                className="flex-1"
-              >
-                {isSaving ? "Saving..." : activeBudget ? "Update Budget" : "Create Budget"}
-        </Button>
-      </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
     </div>
   );
 };
+
+const S_violet = "#7B2FFF";
+
+/* Small helper components */
+const BudgetSection = ({ title, tooltip, children }: { title: string; tooltip: string; children: React.ReactNode }) => (
+  <div className="p-6 rounded-lg space-y-3" style={{ background: "hsl(215 56% 12%)", border: "1px solid hsl(210 46% 19%)" }}>
+    <div className="flex items-center gap-1.5 mb-4">
+      <h3 className="text-lg font-semibold font-display" style={{ color: "#E8F4FF" }}>{title}</h3>
+      <HelpTooltip text={tooltip} />
+    </div>
+    {children}
+  </div>
+);
+
+const FormListSection = ({ title, tooltip, items, onAdd, onRemove, renderRow }: {
+  title: string; tooltip: string; items: any[];
+  onAdd: () => void; onRemove: (i: number) => void;
+  renderRow: (item: any, i: number) => React.ReactNode;
+}) => (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-1.5">
+        <Label style={{ color: "#6B8CAE" }}>{title}</Label>
+        <HelpTooltip text={tooltip} />
+      </div>
+      <Button type="button" variant="outline" size="sm" onClick={onAdd} style={{ background: "hsl(215 49% 15%)", border: "1px solid hsl(210 46% 19%)", color: "#00D4FF" }}>
+        <Plus className="w-4 h-4 mr-1" />Add
+      </Button>
+    </div>
+    {items.map((item, i) => (
+      <div key={i} className="flex gap-2">
+        {renderRow(item, i)}
+        <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(i)}><X className="w-4 h-4" /></Button>
+      </div>
+    ))}
+  </div>
+);
 
 export default Budget;

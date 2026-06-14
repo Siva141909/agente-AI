@@ -527,10 +527,10 @@ const TransactionInputCard = ({ onSuccess }: TransactionInputCardProps) => {
         <TabsContent value="voice">
           <div className="space-y-4">
             <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <Mic className={cn(
-                "w-12 h-12 mx-auto mb-4",
-                isRecording ? "text-red-500 animate-pulse" : "text-muted-foreground"
-              )} />
+              <Mic
+                className={cn("w-12 h-12 mx-auto mb-4", isRecording ? "animate-pulse" : "text-muted-foreground")}
+                style={isRecording ? { color: "#FF3366" } : {}}
+              />
               <Button
                 type="button"
                 onClick={handleVoiceRecord}

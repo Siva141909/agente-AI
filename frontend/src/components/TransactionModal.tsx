@@ -91,14 +91,13 @@ const TransactionModal = ({ open, onClose }: TransactionModalProps) => {
               <button
                 key={t}
                 onClick={() => { setType(t); setCategory(""); }}
-                className={cn(
-                  "flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all",
-                  type === t
-                    ? t === "income"
-                      ? "bg-green-500 text-white shadow"
-                      : "bg-red-500 text-white shadow"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all"
+                style={type === t
+                  ? t === "income"
+                    ? { background: "rgba(0,255,136,0.15)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.35)" }
+                    : { background: "rgba(255,51,102,0.15)", color: "#FF3366", border: "1px solid rgba(255,51,102,0.35)" }
+                  : { color: "hsl(var(--muted-foreground))" }
+                }
               >
                 {t === "income" ? "💚 Income" : "🔴 Expense"}
               </button>
@@ -116,11 +115,12 @@ const TransactionModal = ({ open, onClose }: TransactionModalProps) => {
                 placeholder="0"
                 value={amount}
                 onChange={(e) => { setAmount(e.target.value); setAmountError(""); }}
-                className={cn("pl-7 text-lg font-bold", amountError && "border-red-500")}
+                className="pl-7 text-lg font-bold"
+                style={amountError ? { borderColor: "#FF3366" } : {}}
                 autoFocus
               />
             </div>
-            {amountError && <p className="text-xs text-red-500">{amountError}</p>}
+            {amountError && <p className="text-xs" style={{ color: "#FF3366" }}>{amountError}</p>}
           </div>
 
           {/* Category grid */}
@@ -160,7 +160,11 @@ const TransactionModal = ({ open, onClose }: TransactionModalProps) => {
           <div className="flex gap-2 pt-1">
             <Button variant="outline" className="flex-1" onClick={handleClose} disabled={isSubmitting}>Cancel</Button>
             <Button
-              className={cn("flex-1", type === "income" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600")}
+              className="flex-1"
+              style={type === "income"
+                ? { background: "#00FF88", color: "#070D1A", fontWeight: 600 }
+                : { background: "#FF3366", color: "#ffffff", fontWeight: 600 }
+              }
               onClick={handleSubmit}
               disabled={isSubmitting || !category || !amount}
             >

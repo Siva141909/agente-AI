@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export const SkeletonStat = ({ className }: { className?: string }) => (
-  <div className={cn("p-5 rounded-2xl border bg-card space-y-2", className)}>
+  <div className={cn("p-5 rounded-lg border bg-card space-y-2", className)}>
     <Skeleton className="h-3 w-24" />
     <Skeleton className="h-7 w-32" />
     <Skeleton className="h-3 w-16" />
@@ -10,7 +10,7 @@ export const SkeletonStat = ({ className }: { className?: string }) => (
 );
 
 export const SkeletonCard = ({ className }: { className?: string }) => (
-  <div className={cn("p-5 rounded-2xl border bg-card space-y-3", className)}>
+  <div className={cn("p-5 rounded-lg border bg-card space-y-3", className)}>
     <div className="flex items-center gap-3">
       <Skeleton className="w-10 h-10 rounded-xl" />
       <div className="space-y-1.5 flex-1">
@@ -24,7 +24,7 @@ export const SkeletonCard = ({ className }: { className?: string }) => (
 );
 
 export const SkeletonList = ({ rows = 4, className }: { rows?: number; className?: string }) => (
-  <div className={cn("rounded-2xl border bg-card overflow-hidden divide-y", className)}>
+  <div className={cn("rounded-lg border bg-card overflow-hidden divide-y", className)}>
     {Array.from({ length: rows }).map((_, i) => (
       <div key={i} className="flex items-center gap-3 px-4 py-3.5">
         <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
@@ -39,7 +39,7 @@ export const SkeletonList = ({ rows = 4, className }: { rows?: number; className
 );
 
 export const SkeletonChart = ({ className }: { className?: string }) => (
-  <div className={cn("p-5 rounded-2xl border bg-card space-y-3", className)}>
+  <div className={cn("p-5 rounded-lg border bg-card space-y-3", className)}>
     <Skeleton className="h-4 w-32" />
     <Skeleton className="h-48 w-full rounded-xl" />
   </div>
@@ -55,7 +55,7 @@ export const SkeletonDashboard = () => (
       </div>
       <Skeleton className="h-9 w-48 rounded-xl" />
     </div>
-    <Skeleton className="h-36 w-full rounded-2xl" />
+    <Skeleton className="h-36 w-full rounded-lg" />
     <div className="grid grid-cols-2 gap-4">
       <SkeletonStat />
       <SkeletonStat />

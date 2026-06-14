@@ -54,15 +54,15 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#070D1A" }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card rounded-3xl shadow-xl border border-border p-8 space-y-6">
+        <div className="glass-card p-8 space-y-6" style={{ borderColor: "rgba(0,212,255,0.15)" }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.25)" }}>
               <LogIn className="w-5 h-5 text-primary" />
             </div>
             <div>
@@ -120,7 +120,7 @@ const Login = () => {
 
           <Button
             onClick={handleLogin}
-            className="w-full bg-gradient-to-r from-primary to-secondary"
+            className="w-full" style={{ background: "#00D4FF", color: "#070D1A", fontWeight: 600 }}
             disabled={isLoading || phone.length !== 10 || !password}
           >
             {isLoading ? (

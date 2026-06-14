@@ -113,14 +113,14 @@ const Benefits = () => {
     switch (status?.toLowerCase()) {
       case "approved":
       case "completed":
-        return <Badge className="bg-[#16a34a] text-white">Approved</Badge>;
+        return <Badge style={{ background: "rgba(0,255,136,0.15)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.3)" }}>Approved</Badge>;
       case "rejected":
-        return <Badge className="bg-muted text-muted-foreground">Rejected</Badge>;
+        return <Badge style={{ background: "rgba(255,51,102,0.12)", color: "#FF3366", border: "1px solid rgba(255,51,102,0.25)" }}>Rejected</Badge>;
       case "under_review":
       case "processing":
-        return <Badge className="bg-amber-50 text-amber-700 border border-amber-200">Under Review</Badge>;
+        return <Badge style={{ background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" }}>Under Review</Badge>;
       default:
-        return <Badge className="bg-blue-50 text-blue-700 border border-blue-200">Submitted</Badge>;
+        return <Badge style={{ background: "rgba(0,212,255,0.10)", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.25)" }}>Submitted</Badge>;
     }
   };
 
@@ -128,11 +128,11 @@ const Benefits = () => {
     switch (status?.toLowerCase()) {
       case "approved":
       case "completed":
-        return <CheckCircle className="w-4 h-4 text-[#16a34a]" />;
+        return <CheckCircle className="w-4 h-4" style={{ color: "#00FF88" }} />;
       case "rejected":
         return <XCircle className="w-4 h-4 text-muted-foreground" />;
       default:
-        return <Clock className="w-4 h-4 text-amber-600" />;
+        return <Clock className="w-4 h-4" style={{ color: "#FF6B35" }} />;
     }
   };
 
@@ -384,7 +384,7 @@ const Benefits = () => {
                       {app.benefit_received && (
                         <div>
                           <p className="text-muted-foreground">Benefit Received</p>
-                          <p className="font-medium text-[#16a34a]">
+                          <p className="font-medium" style={{ color: "#00FF88" }}>
                             ₹{Number(app.benefit_received).toLocaleString("en-IN")}
                           </p>
                         </div>

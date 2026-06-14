@@ -19,6 +19,17 @@ import db from "@/services/database";
 import { toast } from "sonner";
 import PageIntro from "@/components/PageIntro";
 
+const S = {
+  surface:  "hsl(215 56% 12%)",
+  surface2: "hsl(215 49% 15%)",
+  border:   "hsl(210 46% 19%)",
+  cyan:     "#00D4FF",
+  green:    "#00FF88",
+  danger:   "#FF3366",
+  textPri:  "#E8F4FF",
+  textSec:  "#6B8CAE",
+};
+
 const Transactions = () => {
   const { isAuthenticated } = useApp();
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -35,17 +46,15 @@ const Transactions = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadTransactions();
-    }
+    if (isAuthenticated) loadTransactions();
   }, [isAuthenticated, dateRange]);
 
   const loadTransactions = async () => {
     try {
       setIsLoading(true);
       const data = await db.transactions.getAll({
-        date_start: dateRange.from?.toISOString().split('T')[0],
-        date_end: dateRange.to?.toISOString().split('T')[0],
+        date_start: dateRange.from?.toISOString().split("T")[0],
+        date_end: dateRange.to?.toISOString().split("T")[0],
       });
       setTransactions(data);
     } catch (error) {
@@ -56,233 +65,171 @@ const Transactions = () => {
     }
   };
 
-  // Get unique categories
   const categories = useMemo(() => {
     const cats = new Set(transactions.map((t) => t.category).filter(Boolean));
     return Array.from(cats);
   }, [transactions]);
 
-  // Filter transactions
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
-
-    // Date range filter
-    if (dateRange.from) {
-      filtered = filtered.filter((t) => new Date(t.transaction_date) >= dateRange.from!);
-    }
-    if (dateRange.to) {
-      filtered = filtered.filter((t) => new Date(t.transaction_date) <= dateRange.to!);
-    }
-
-    // Type filter
-    if (typeFilter !== "all") {
-      filtered = filtered.filter((t) => t.transaction_type === typeFilter);
-    }
-
-    // Category filter
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter((t) => t.category === categoryFilter);
-    }
-
-    // Search filter
+    if (dateRange.from) filtered = filtered.filter((t) => new Date(t.transaction_date) >= dateRange.from!);
+    if (dateRange.to)   filtered = filtered.filter((t) => new Date(t.transaction_date) <= dateRange.to!);
+    if (typeFilter !== "all") filtered = filtered.filter((t) => t.transaction_type === typeFilter);
+    if (categoryFilter !== "all") filtered = filtered.filter((t) => t.category === categoryFilter);
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (t) =>
-          t.category?.toLowerCase().includes(query) ||
-          t.description?.toLowerCase().includes(query) ||
-          t.merchant_name?.toLowerCase().includes(query)
+        (t) => t.category?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.merchant_name?.toLowerCase().includes(q)
       );
     }
-
     return filtered;
   }, [transactions, dateRange, typeFilter, categoryFilter, searchQuery]);
 
-  // Group by date
   const groupedTransactions = useMemo(() => {
     const grouped: Record<string, any[]> = {};
     filteredTransactions.forEach((t) => {
       const date = t.transaction_date;
-      if (!grouped[date]) {
-        grouped[date] = [];
-      }
+      if (!grouped[date]) grouped[date] = [];
       grouped[date].push(t);
     });
     return grouped;
   }, [filteredTransactions]);
 
-  // Today's summary
   const today = new Date().toISOString().split("T")[0];
   const todayTransactions = transactions.filter((t) => t.transaction_date === today);
-  const todayIncome = todayTransactions
-    .filter((t) => t.transaction_type === "income")
-    .reduce((sum, t) => sum + Number(t.amount), 0);
-  const todayExpense = todayTransactions
-    .filter((t) => t.transaction_type === "expense")
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const todayIncome  = todayTransactions.filter(t => t.transaction_type === "income").reduce((s, t) => s + Number(t.amount), 0);
+  const todayExpense = todayTransactions.filter(t => t.transaction_type === "expense").reduce((s, t) => s + Number(t.amount), 0);
 
-  const handleEdit = (transaction: any) => {
-    setEditingTransaction(transaction);
-    setIsEditDialogOpen(true);
+  const handleEdit = (transaction: any) => { setEditingTransaction(transaction); setIsEditDialogOpen(true); };
+  const handleDelete = (id: string) => setDeleteTransaction(id);
+  const confirmDelete = async () => {
+    if (!deleteTransaction) return;
+    try {
+      await db.transactions.delete(deleteTransaction);
+      toast.success("Transaction deleted");
+      setDeleteTransaction(null);
+      loadTransactions();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete");
+    }
   };
 
-      const handleDelete = (id: string) => {
-        setDeleteTransaction(id);
-      };
-
-      const confirmDelete = async () => {
-        if (!deleteTransaction) return;
-        try {
-          await db.transactions.delete(deleteTransaction);
-          toast.success("Transaction deleted successfully!");
-          setDeleteTransaction(null);
-          loadTransactions();
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : "Failed to delete transaction");
-        }
-      };
-
   if (isLoading) {
-    return (
-      <div className="space-y-4 pb-24 md:pb-8">
-        <SkeletonList rows={8} />
-      </div>
-    );
+    return <div className="space-y-4 pb-24 md:pb-8"><SkeletonList rows={8} /></div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-in">
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search transactions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+      <div
+        className="p-4 rounded-lg"
+        style={{ background: S.surface, border: `1px solid ${S.border}` }}
+      >
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: S.textSec }} />
+            <Input
+              placeholder="Search transactions…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}
+            />
           </div>
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className="w-full md:w-[140px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="income">Income</SelectItem>
               <SelectItem value="expense">Expense</SelectItem>
             </SelectContent>
           </Select>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className="w-full md:w-[140px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
+              {categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
             </SelectContent>
           </Select>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full md:w-[250px] justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from && dateRange.to ? (
-                  `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
-                ) : (
-                  <span>Pick a date range</span>
-                )}
+              <Button variant="outline" className="w-full md:w-[220px] justify-start text-left font-normal" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+                <CalendarIcon className="mr-2 h-4 w-4" style={{ color: S.textSec }} />
+                {dateRange.from && dateRange.to
+                  ? `${format(dateRange.from, "MMM dd")} – ${format(dateRange.to, "MMM dd")}`
+                  : "Pick date range"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="start" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <Calendar
                 initialFocus
                 mode="range"
                 defaultMonth={dateRange.from}
-                selected={{
-                  from: dateRange.from,
-                  to: dateRange.to,
-                }}
-                onSelect={(range) => {
-                  setDateRange({
-                    from: range?.from,
-                    to: range?.to,
-                  });
-                }}
+                selected={{ from: dateRange.from, to: dateRange.to }}
+                onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
                 numberOfMonths={2}
               />
             </PopoverContent>
           </Popover>
         </div>
-      </Card>
+      </div>
 
       <PageIntro
         title="What is this page?"
-        description="This page shows every income and expense entry you've recorded. Use it to review, search, and edit past transactions."
+        description="Every income and expense you've recorded. Search, filter, and edit past transactions."
       />
 
       {/* Today's Summary */}
-      <Card className="p-6 bg-gradient-to-br from-primary/10 to-secondary/10">
-        <h2 className="text-xl font-bold mb-4">Today's Summary</h2>
+      <div
+        className="p-6 rounded-lg"
+        style={{ background: S.surface, border: `1px solid rgba(0,212,255,0.15)`, boxShadow: "0 0 20px rgba(0,212,255,0.05)" }}
+      >
+        <h2 className="text-xl font-bold font-display mb-4" style={{ color: S.textPri }}>Today's Summary</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-muted-foreground">Income</p>
-            <p className="text-2xl font-bold text-green-600">₹{todayIncome.toLocaleString("en-IN")}</p>
+            <p className="text-sm" style={{ color: S.textSec }}>Income</p>
+            <p className="text-2xl font-bold data-value" style={{ color: S.green }}>₹{todayIncome.toLocaleString("en-IN")}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Expense</p>
-            <p className="text-2xl font-bold text-red-600">₹{todayExpense.toLocaleString("en-IN")}</p>
+            <p className="text-sm" style={{ color: S.textSec }}>Expense</p>
+            <p className="text-2xl font-bold data-value" style={{ color: S.danger }}>₹{todayExpense.toLocaleString("en-IN")}</p>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Today's Transactions */}
       {todayTransactions.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold mb-4">Today</h2>
-          <Card>
-            <div className="divide-y">
-              {todayTransactions.map((transaction) => (
-                <TransactionRow
-                  key={transaction.transaction_id}
-                  transaction={transaction}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          </Card>
+          <h2 className="text-xl font-bold font-display mb-4" style={{ color: S.textPri }}>Today</h2>
+          <div className="rounded-lg overflow-hidden" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+            {todayTransactions.map((t) => (
+              <TransactionRow key={t.transaction_id} transaction={t} onEdit={handleEdit} onDelete={handleDelete} />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Last 10 Days */}
+      {/* Grouped by date */}
       <div>
-        <h2 className="text-xl font-bold mb-4">Last 10 Days</h2>
+        <h2 className="text-xl font-bold font-display mb-4" style={{ color: S.textPri }}>Last 10 Days</h2>
         <div className="space-y-4">
           {Object.entries(groupedTransactions)
             .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
             .map(([date, txs]) => (
-              <Card key={date}>
-                <div className="p-4 border-b">
-                  <h3 className="font-semibold">{format(new Date(date), "EEEE, MMMM dd, yyyy")}</h3>
+              <div key={date} className="rounded-lg overflow-hidden" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+                <div className="p-4" style={{ borderBottom: `1px solid ${S.border}` }}>
+                  <h3 className="font-semibold text-sm" style={{ color: S.textSec }}>
+                    {format(new Date(date), "EEEE, MMMM dd, yyyy")}
+                  </h3>
                 </div>
-                <div className="divide-y">
-                  {txs.map((transaction) => (
-                    <TransactionRow
-                      key={transaction.transaction_id}
-                      transaction={transaction}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
-              </Card>
+                {txs.map((t) => (
+                  <TransactionRow key={t.transaction_id} transaction={t} onEdit={handleEdit} onDelete={handleDelete} />
+                ))}
+              </div>
             ))}
         </div>
       </div>
@@ -290,30 +237,22 @@ const Transactions = () => {
       {/* Edit Dialog */}
       <EditTransactionDialog
         open={isEditDialogOpen}
-        onClose={() => {
-          setIsEditDialogOpen(false);
-          setEditingTransaction(null);
-        }}
+        onClose={() => { setIsEditDialogOpen(false); setEditingTransaction(null); }}
         transaction={editingTransaction}
       />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTransaction} onOpenChange={() => setDeleteTransaction(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this transaction? This action cannot be undone.
+            <AlertDialogTitle style={{ color: S.textPri }}>Delete Transaction</AlertDialogTitle>
+            <AlertDialogDescription style={{ color: S.textSec }}>
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} style={{ background: S.danger, color: "#fff" }}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -321,83 +260,51 @@ const Transactions = () => {
   );
 };
 
-const TransactionRow = ({
-  transaction,
-  onEdit,
-  onDelete,
-}: {
-  transaction: any;
-  onEdit: (t: any) => void;
-  onDelete: (id: string) => void;
-}) => {
+const TransactionRow = ({ transaction: t, onEdit, onDelete }: { transaction: any; onEdit: (t: any) => void; onDelete: (id: string) => void }) => {
+  const isIncome = t.transaction_type === "income";
   return (
     <motion.div
-      whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+      whileHover={{ backgroundColor: "hsl(215 49% 15%)" }}
       className="p-4 flex items-center justify-between"
+      style={{ borderBottom: "1px solid hsl(210 46% 19%)" }}
     >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg",
-                          transaction.transaction_type === "income"
-                            ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400"
-                            : "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400"
-                        )}
-                      >
-                        {transaction.transaction_type === "income" ? "+" : "-"}
-                      </div>
-                      <div>
-                        <div className="font-semibold">{transaction.category || "Uncategorized"}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {transaction.transaction_time || "N/A"} • {transaction.description || "No description"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={cn(
-                          "font-bold text-lg",
-                          transaction.transaction_type === "income"
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        )}
-                      >
-                        {transaction.transaction_type === "income" ? "+" : "-"}₹{Number(transaction.amount).toLocaleString("en-IN")}
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(transaction)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(transaction.transaction_id)}>
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </Button>
-                    </div>
+      <div className="flex items-center gap-4">
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center font-bold"
+          style={isIncome
+            ? { background: "rgba(0,255,136,0.12)", color: "#00FF88" }
+            : { background: "rgba(255,51,102,0.12)", color: "#FF3366" }}
+        >
+          {isIncome ? "+" : "−"}
+        </div>
+        <div>
+          <div className="font-semibold text-sm" style={{ color: "#E8F4FF" }}>{t.category || "Uncategorized"}</div>
+          <div className="text-xs" style={{ color: "#6B8CAE" }}>{t.transaction_time || "N/A"} · {t.description || "No description"}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="font-bold data-value" style={{ color: isIncome ? "#00FF88" : "#FF3366" }}>
+          {isIncome ? "+" : "−"}₹{Number(t.amount).toLocaleString("en-IN")}
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => onEdit(t)}><Edit className="w-4 h-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => onDelete(t.transaction_id)}>
+          <Trash2 className="w-4 h-4" style={{ color: "#FF3366" }} />
+        </Button>
+      </div>
     </motion.div>
   );
 };
 
-const EditTransactionDialog = ({
-  open,
-  onClose,
-  transaction,
-}: {
-  open: boolean;
-  onClose: () => void;
-  transaction: any;
-}) => {
+const EditTransactionDialog = ({ open, onClose, transaction }: { open: boolean; onClose: () => void; transaction: any }) => {
   const [formData, setFormData] = useState({
     amount: transaction?.amount?.toString() || "",
     transaction_type: transaction?.transaction_type || "expense",
     transaction_date: transaction?.transaction_date ? new Date(transaction.transaction_date) : new Date(),
     transaction_time: transaction?.transaction_time || "",
     category: transaction?.category || "",
-    subcategory: transaction?.subcategory || "",
     payment_method: transaction?.payment_method || "",
     description: transaction?.description || "",
     merchant_name: transaction?.merchant_name || "",
-    location: transaction?.location || "",
-    source: transaction?.source || "",
-    is_recurring: transaction?.is_recurring || false,
-    recurring_frequency: transaction?.recurring_frequency || "",
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -409,14 +316,9 @@ const EditTransactionDialog = ({
         transaction_date: transaction.transaction_date ? new Date(transaction.transaction_date) : new Date(),
         transaction_time: transaction.transaction_time || "",
         category: transaction.category || "",
-        subcategory: transaction.subcategory || "",
         payment_method: transaction.payment_method || "",
         description: transaction.description || "",
         merchant_name: transaction.merchant_name || "",
-        location: transaction.location || "",
-        source: transaction.source || "",
-        is_recurring: transaction.is_recurring || false,
-        recurring_frequency: transaction.recurring_frequency || "",
       });
     }
   }, [transaction]);
@@ -431,149 +333,72 @@ const EditTransactionDialog = ({
         transaction_date: format(formData.transaction_date, "yyyy-MM-dd"),
         transaction_time: formData.transaction_time,
         category: formData.category,
-        subcategory: formData.subcategory || undefined,
         description: formData.description || undefined,
         payment_method: formData.payment_method || undefined,
         merchant_name: formData.merchant_name || undefined,
-        location: formData.location || undefined,
-        source: formData.source || undefined,
-        is_recurring: formData.is_recurring,
-        recurring_frequency: formData.recurring_frequency || undefined,
       });
-      toast.success("Transaction updated successfully!");
+      toast.success("Transaction updated!");
       onClose();
-      window.location.reload(); // Refresh to show updated data
+      window.location.reload();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update transaction");
+      toast.error(error instanceof Error ? error.message : "Failed to update");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const categories = {
-    income: ["Delivery", "Freelance", "Salary", "Other"],
-    expense: ["Food", "Fuel", "Rent", "Groceries", "Maintenance", "Phone", "EMI", "Misc"],
-  };
-
+  const categories = { income: ["Delivery", "Freelance", "Salary", "Other"], expense: ["Food", "Fuel", "Rent", "Groceries", "Maintenance", "Phone", "EMI", "Misc"] };
   if (!transaction) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ background: "hsl(215 56% 12%)", border: "1px solid hsl(210 46% 19%)" }}
+      >
         <DialogHeader>
-          <DialogTitle>Edit Transaction</DialogTitle>
+          <DialogTitle style={{ color: "#E8F4FF" }}>Edit Transaction</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Amount (₹) *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              />
+              <Label style={{ color: "#6B8CAE" }}>Amount (₹)</Label>
+              <Input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Type *</Label>
-              <Select
-                value={formData.transaction_type}
-                onValueChange={(v) => setFormData({ ...formData, transaction_type: v as any, category: "" })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
+              <Label style={{ color: "#6B8CAE" }}>Type</Label>
+              <Select value={formData.transaction_type} onValueChange={(v) => setFormData({ ...formData, transaction_type: v as any, category: "" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="income">Income</SelectItem><SelectItem value="expense">Expense</SelectItem></SelectContent>
               </Select>
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Date *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(formData.transaction_date, "PPP")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.transaction_date}
-                    onSelect={(date) => date && setFormData({ ...formData, transaction_date: date })}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label>Time</Label>
-              <Input
-                type="time"
-                value={formData.transaction_time}
-                onChange={(e) => setFormData({ ...formData, transaction_time: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Category *</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(v) => setFormData({ ...formData, category: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
+              <Label style={{ color: "#6B8CAE" }}>Category</Label>
+              <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
-                  {categories[formData.transaction_type].map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
+                  {categories[formData.transaction_type as "income" | "expense"].map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <Select
-                value={formData.payment_method}
-                onValueChange={(v) => setFormData({ ...formData, payment_method: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["UPI", "Cash", "Card", "Bank Transfer"].map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+              <Label style={{ color: "#6B8CAE" }}>Payment Method</Label>
+              <Select value={formData.payment_method} onValueChange={(v) => setFormData({ ...formData, payment_method: v })}>
+                <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
+                <SelectContent>{["UPI", "Cash", "Card", "Bank Transfer"].map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
-
           <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={2}
-            />
+            <Label style={{ color: "#6B8CAE" }}>Description</Label>
+            <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} />
           </div>
-
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="flex-1">
-              {isSaving ? "Saving..." : "Save Changes"}
+            <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+            <Button onClick={handleSave} disabled={isSaving} className="flex-1" style={{ background: "#00D4FF", color: "#070D1A" }}>
+              {isSaving ? "Saving…" : "Save Changes"}
             </Button>
           </div>
         </div>
@@ -583,4 +408,3 @@ const EditTransactionDialog = ({
 };
 
 export default Transactions;
-

@@ -45,16 +45,12 @@ const RiskDashboard = () => {
     }
   };
 
-  const getRiskColor = (level: string) => {
+  const getRiskStyle = (level: string): React.CSSProperties => {
     switch (level?.toLowerCase()) {
-      case "low":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "high":
-        return "bg-red-100 text-red-800 border-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
+      case "low":    return { background: "rgba(0,255,136,0.12)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.3)" };
+      case "medium": return { background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.3)" };
+      case "high":   return { background: "rgba(255,51,102,0.12)", color: "#FF3366", border: "1px solid rgba(255,51,102,0.3)" };
+      default:       return { background: "rgba(107,140,174,0.12)", color: "#6B8CAE", border: "1px solid rgba(107,140,174,0.3)" };
     }
   };
 
@@ -117,7 +113,7 @@ const RiskDashboard = () => {
       {/* Risk Score Card */}
       <Card className="p-6">
         <div className="flex items-center gap-6">
-          <div className={`p-4 rounded-lg ${getRiskColor(risk.overall_risk_level)}`}>
+          <div className="p-4 rounded-lg" style={getRiskStyle(risk.overall_risk_level)}>
             {getRiskIcon(risk.overall_risk_level)}
           </div>
           <div className="flex-1">
@@ -189,7 +185,7 @@ const RiskDashboard = () => {
               return (
                 <div key={index} className="p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 mt-0.5" style={{ color: "#FF6B35" }} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{factorName}</p>
@@ -217,9 +213,9 @@ const RiskDashboard = () => {
           <h3 className="text-lg font-semibold mb-4">Recommended Actions</h3>
           <div className="space-y-3">
             {recommendedActions.map((action: any, index: number) => (
-              <div key={index} className="p-4 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200">
+              <div key={index} className="p-4 rounded-lg" style={{ background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.2)" }}>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 mt-0.5" style={{ color: "#00D4FF" }} />
                   <div className="flex-1">
                     <p className="font-medium">{typeof action === "string" ? action : action.action || action.title}</p>
                     {typeof action === "object" && action.description && (
