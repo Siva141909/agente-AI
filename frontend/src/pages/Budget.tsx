@@ -3,15 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Edit, X, Loader2 } from "lucide-react";
+import { Plus, Edit, X } from "lucide-react";
 import { SkeletonCard, SkeletonStat } from "@/components/ui/skeleton-card";
-import { useNavigate } from "react-router-dom";
 import db from "@/services/database";
 import { toast } from "sonner";
 import { format, addMonths } from "date-fns";
-import PageIntro from "@/components/PageIntro";
 import HelpTooltip from "@/components/HelpTooltip";
 
 const S = {
@@ -21,12 +18,12 @@ const S = {
   cyan:     "#00D4FF",
   green:    "#00FF88",
   danger:   "#FF3366",
+  violet:   "#7B2FFF",
   textPri:  "#E8F4FF",
   textSec:  "#6B8CAE",
 };
 
 const Budget = () => {
-  const navigate = useNavigate();
   const [budgets, setBudgets] = useState<any[]>([]);
   const [activeBudget, setActiveBudget] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,148 +135,165 @@ const Budget = () => {
   if (isLoading) {
     return (
       <div className="space-y-4 pb-24 md:pb-8">
-        <div className="grid grid-cols-2 gap-4"><SkeletonStat /><SkeletonStat /></div>
+        <div className="grid grid-cols-3 gap-4"><SkeletonStat /><SkeletonStat /><SkeletonStat /></div>
         <SkeletonCard /><SkeletonCard />
       </div>
     );
   }
 
-  const fixedCosts = (activeBudget?.fixed_costs || {}) as Record<string, number>;
-  const variableCosts = (activeBudget?.variable_costs || {}) as Record<string, number>;
+  const fixedCosts     = (activeBudget?.fixed_costs || {}) as Record<string, number>;
+  const variableCosts  = (activeBudget?.variable_costs || {}) as Record<string, number>;
   const categoryLimits = (activeBudget?.category_limits || {}) as Record<string, number>;
-  const totalFixed = Object.values(fixedCosts).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
-  const totalVariable = Object.values(variableCosts).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
-  const totalExpenses = totalFixed + totalVariable;
+  const totalFixed     = Object.values(fixedCosts).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+  const totalVariable  = Object.values(variableCosts).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+  const budgetTotal    = totalFixed + totalVariable;
+
+  /* Actual spend during budget period */
+  const totalActualSpend = transactions
+    .filter(t => t.transaction_type === "expense")
+    .reduce((s, t) => s + Number(t.amount || 0), 0);
+  const remaining = budgetTotal - totalActualSpend;
 
   return (
     <div className="space-y-6 page-in">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-display" style={{ color: S.textPri }}>Budget Management</h1>
+          <h1 className="text-3xl font-bold font-display" style={{ color: S.textPri }}>Budget</h1>
           <p className="text-sm" style={{ color: S.textSec }}>Plan and track your spending</p>
         </div>
-        <Button onClick={() => setIsEditOpen(true)} style={{ background: S.cyan, color: "#070D1A" }}>
-          <Plus className="w-4 h-4 mr-2" />Create Budget
-        </Button>
+        <div className="flex items-center gap-3">
+          {budgets.length > 0 && (
+            <Select value={activeBudget?.budget_id || ""} onValueChange={(id) => setActiveBudget(budgets.find(b => b.budget_id === id) || null)}>
+              <SelectTrigger className="w-[220px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+                <SelectValue placeholder="Select budget" />
+              </SelectTrigger>
+              <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+                {budgets.map(b => (
+                  <SelectItem key={b.budget_id} value={b.budget_id}>
+                    {b.budget_type || "Budget"} — {format(new Date(b.valid_from), "MMM dd")} to {format(new Date(b.valid_until), "MMM dd")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button onClick={() => setIsEditOpen(true)} style={{ background: S.cyan, color: "#070D1A" }}>
+            <Plus className="w-4 h-4 mr-2" />{activeBudget ? "New Budget" : "Create Budget"}
+          </Button>
+        </div>
       </div>
 
-      {/* Budget Selector */}
-      <div className="p-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-        <Select value={activeBudget?.budget_id || ""} onValueChange={(id) => setActiveBudget(budgets.find(b => b.budget_id === id) || null)}>
-          <SelectTrigger className="w-full md:w-[300px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
-            <SelectValue placeholder="Select a budget" />
-          </SelectTrigger>
-          <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-            {budgets.map(b => (
-              <SelectItem key={b.budget_id} value={b.budget_id}>
-                {b.budget_type || "Budget"} — {format(new Date(b.valid_from), "MMM dd")} to {format(new Date(b.valid_until), "MMM dd")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* ── No budget empty state ── */}
+      {!activeBudget && (
+        <div className="py-24 flex flex-col items-center gap-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+          <div className="w-16 h-16 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,212,255,0.10)", border: "1px solid rgba(0,212,255,0.25)" }}>
+            <Plus className="w-8 h-8" style={{ color: S.cyan }} />
+          </div>
+          <p className="text-xl font-bold font-display" style={{ color: S.textPri }}>No budget yet</p>
+          <p className="text-sm" style={{ color: S.textSec }}>Create a budget to start tracking your spending against a plan</p>
+          <Button onClick={() => setIsEditOpen(true)} style={{ background: S.cyan, color: "#070D1A" }}>
+            <Plus className="w-4 h-4 mr-1.5" />Create Budget
+          </Button>
+        </div>
+      )}
 
-      {activeBudget ? (
+      {activeBudget && (
         <>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold font-display" style={{ color: S.textPri }}>{activeBudget.budget_type || "Budget"} Budget</h2>
-              <p className="text-sm" style={{ color: S.textSec }}>{format(new Date(activeBudget.valid_from), "MMM dd, yyyy")} – {format(new Date(activeBudget.valid_until), "MMM dd, yyyy")}</p>
-            </div>
-            <Button variant="outline" onClick={() => setIsEditOpen(true)} style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
-              <Edit className="w-4 h-4 mr-2" />Edit Budget
+          {/* ── Period bar ── */}
+          <div className="flex items-center justify-between p-3 px-4 rounded-lg" style={{ background: S.surface2, border: `1px solid ${S.border}` }}>
+            <span className="text-sm font-semibold capitalize" style={{ color: S.cyan }}>{activeBudget.budget_type || "Budget"}</span>
+            <span className="text-sm" style={{ color: S.textSec }}>
+              {format(new Date(activeBudget.valid_from), "MMM dd, yyyy")} – {format(new Date(activeBudget.valid_until), "MMM dd, yyyy")}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)} style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+              <Edit className="w-3.5 h-3.5 mr-1.5" />Edit
             </Button>
           </div>
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-              { label: "Expected Income",   value: activeBudget.total_income_expected || 0, color: S.green },
-              { label: "Total Expenses",    value: totalExpenses,                           color: S.danger },
-              { label: "Savings Target",    value: activeBudget.savings_target || 0,        color: S.cyan },
-              { label: "Discretionary",     value: activeBudget.discretionary_budget || 0,  color: S.textPri },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-                <p className="text-sm mb-2" style={{ color: S.textSec }}>{label}</p>
-                <p className="text-2xl font-bold data-value font-display" style={{ color }}>₹{Number(value).toLocaleString("en-IN")}</p>
-              </div>
-            ))}
+          {/* ── 3 Health Cards: Budget Total · Spent · Remaining ── */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-5 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+              <p className="text-sm mb-1.5" style={{ color: S.textSec }}>Budget Total</p>
+              <p className="text-2xl font-bold data-value font-display" style={{ color: S.textPri }}>₹{budgetTotal.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="p-5 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+              <p className="text-sm mb-1.5" style={{ color: S.textSec }}>Spent So Far</p>
+              <p className="text-2xl font-bold data-value font-display" style={{ color: totalActualSpend > budgetTotal ? S.danger : S.textPri }}>₹{totalActualSpend.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="p-5 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+              <p className="text-sm mb-1.5" style={{ color: S.textSec }}>Remaining</p>
+              <p className="text-2xl font-bold data-value font-display" style={{ color: remaining >= 0 ? S.green : S.danger }}>
+                {remaining >= 0 ? "" : "−"}₹{Math.abs(remaining).toLocaleString("en-IN")}
+              </p>
+            </div>
           </div>
 
-          {/* Fixed Costs */}
-          <BudgetSection title="Fixed Costs" tooltip="Bills that stay almost the same every month, like rent or EMIs.">
-            {Object.entries(fixedCosts).map(([name, amount]) => (
-              <div key={name} className="flex items-center justify-between p-3 rounded-lg" style={{ background: S.surface2 }}>
-                <p className="font-medium" style={{ color: S.textPri }}>{name}</p>
-                <p className="font-semibold data-value" style={{ color: S.textSec }}>₹{Number(amount).toLocaleString("en-IN")}</p>
-              </div>
-            ))}
-            {Object.keys(fixedCosts).length === 0 && <p className="text-center py-4" style={{ color: S.textSec }}>No fixed costs defined</p>}
-          </BudgetSection>
+          {/* ── Two-column: Variable costs (left) + Fixed costs (right) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Variable costs with spend bars */}
+            <BudgetSection title="Variable Costs" tooltip="Spending that changes month to month, like fuel, food, or shopping.">
+              {Object.entries(variableCosts).map(([category, amount]) => {
+                const actual = calculateActualSpending(category);
+                const amountNum = Number(amount) || 0;
+                const pct = amountNum > 0 ? (actual / amountNum) * 100 : 0;
+                const over = pct > 100;
+                return (
+                  <div key={category} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm" style={{ color: S.textPri }}>{category}</span>
+                      <span className="text-xs" style={{ color: over ? S.danger : S.textSec }}>
+                        ₹{actual.toLocaleString("en-IN")} / ₹{amountNum.toLocaleString("en-IN")}
+                        {over && " ↑"}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full" style={{ background: S.surface2 }}>
+                      <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, background: over ? S.danger : S.cyan }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {Object.keys(variableCosts).length === 0 && <p className="text-sm py-3 text-center" style={{ color: S.textSec }}>No variable costs defined</p>}
+            </BudgetSection>
 
-          {/* Variable Costs */}
-          <BudgetSection title="Variable Costs" tooltip="Spending that changes month to month, like fuel, food, or shopping.">
-            {Object.entries(variableCosts).map(([category, amount]) => {
-              const actual = calculateActualSpending(category);
-              const amountNum = Number(amount) || 0;
-              const pct = amountNum > 0 ? (actual / amountNum) * 100 : 0;
-              const over = pct > 100;
-              return (
-                <div key={category} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium" style={{ color: S.textPri }}>{category}</span>
-                    <span className="text-sm" style={{ color: over ? S.danger : S.textSec }}>
-                      ₹{actual.toLocaleString("en-IN")} / ₹{amountNum.toLocaleString("en-IN")}
-                      {over && " (Over budget!)"}
-                    </span>
+            {/* Fixed costs list */}
+            <div className="space-y-4">
+              <BudgetSection title="Fixed Costs" tooltip="Bills that stay the same every month, like rent or EMIs.">
+                {Object.entries(fixedCosts).map(([name, amount]) => (
+                  <div key={name} className="flex items-center justify-between p-2.5 rounded-lg" style={{ background: S.surface2 }}>
+                    <p className="font-medium text-sm" style={{ color: S.textPri }}>{name}</p>
+                    <p className="font-semibold text-sm data-value" style={{ color: S.textSec }}>₹{Number(amount).toLocaleString("en-IN")}</p>
                   </div>
-                  <div className="w-full h-2 rounded-full" style={{ background: S.surface2 }}>
-                    <div
-                      className="h-2 rounded-full transition-all"
-                      style={{ width: `${Math.min(pct, 100)}%`, background: over ? S.danger : S.cyan }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            {Object.keys(variableCosts).length === 0 && <p className="text-center py-4" style={{ color: S.textSec }}>No variable costs defined</p>}
-          </BudgetSection>
+                ))}
+                {Object.keys(fixedCosts).length === 0 && <p className="text-sm py-3 text-center" style={{ color: S.textSec }}>No fixed costs defined</p>}
+              </BudgetSection>
 
-          {/* Category Limits */}
-          <BudgetSection title="Category Limits" tooltip="Maximum amount you plan to spend in each category for this period.">
-            {Object.entries(categoryLimits).map(([category, limit]) => {
-              const actual = calculateActualSpending(category);
-              const limitNum = Number(limit) || 0;
-              const pct = limitNum > 0 ? (actual / limitNum) * 100 : 0;
-              const over = pct > 100;
-              return (
-                <div key={category} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium" style={{ color: S.textPri }}>{category}</span>
-                    <span className="text-sm" style={{ color: over ? S.danger : S.textSec }}>
-                      ₹{actual.toLocaleString("en-IN")} / ₹{limitNum.toLocaleString("en-IN")}
-                      {over && " (Over limit!)"}
-                    </span>
-                  </div>
-                  <div className="w-full h-2 rounded-full" style={{ background: S.surface2 }}>
-                    <div
-                      className="h-2 rounded-full transition-all"
-                      style={{ width: `${Math.min(pct, 100)}%`, background: over ? S.danger : S.violet }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            {Object.keys(categoryLimits).length === 0 && <p className="text-center py-4" style={{ color: S.textSec }}>No category limits defined</p>}
-          </BudgetSection>
+              {/* Category Limits */}
+              {Object.keys(categoryLimits).length > 0 && (
+                <BudgetSection title="Category Limits" tooltip="Maximum spend per category for this period.">
+                  {Object.entries(categoryLimits).map(([category, limit]) => {
+                    const actual = calculateActualSpending(category);
+                    const limitNum = Number(limit) || 0;
+                    const pct = limitNum > 0 ? (actual / limitNum) * 100 : 0;
+                    const over = pct > 100;
+                    return (
+                      <div key={category} className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm" style={{ color: S.textPri }}>{category}</span>
+                          <span className="text-xs" style={{ color: over ? S.danger : S.textSec }}>
+                            ₹{actual.toLocaleString("en-IN")} / ₹{limitNum.toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full" style={{ background: S.surface2 }}>
+                          <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, background: over ? S.danger : "#7B2FFF" }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </BudgetSection>
+              )}
+            </div>
+          </div>
         </>
-      ) : (
-        <div className="p-12 text-center rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-          <p className="text-lg font-semibold mb-2" style={{ color: S.textPri }}>No active budget</p>
-          <p className="mb-4" style={{ color: S.textSec }}>Create a budget to start tracking your spending</p>
-          <Button onClick={() => setIsEditOpen(true)} style={{ background: S.cyan, color: "#070D1A" }}>Create Budget</Button>
-        </div>
       )}
 
       {/* Create/Edit Dialog */}
@@ -329,10 +343,8 @@ const Budget = () => {
               </div>
             </div>
 
-            {/* Fixed costs builder */}
             <FormListSection
-              title="Fixed Costs"
-              tooltip="Bills that stay almost the same every month."
+              title="Fixed Costs" tooltip="Bills that stay almost the same every month."
               items={formData.fixed_costs}
               onAdd={() => setFormData({ ...formData, fixed_costs: [...formData.fixed_costs, { name: "", amount: "" }] })}
               onRemove={(i) => setFormData({ ...formData, fixed_costs: formData.fixed_costs.filter((_, x) => x !== i) })}
@@ -344,10 +356,8 @@ const Budget = () => {
               )}
             />
 
-            {/* Variable costs builder */}
             <FormListSection
-              title="Variable Costs"
-              tooltip="Spending that changes month to month."
+              title="Variable Costs" tooltip="Spending that changes month to month."
               items={formData.variable_costs}
               onAdd={() => setFormData({ ...formData, variable_costs: [...formData.variable_costs, { category: "", amount: "" }] })}
               onRemove={(i) => setFormData({ ...formData, variable_costs: formData.variable_costs.filter((_, x) => x !== i) })}
@@ -359,10 +369,8 @@ const Budget = () => {
               )}
             />
 
-            {/* Category limits builder */}
             <FormListSection
-              title="Category Limits"
-              tooltip="Max you plan to spend per category."
+              title="Category Limits" tooltip="Max you plan to spend per category."
               items={formData.category_limits}
               onAdd={() => setFormData({ ...formData, category_limits: [...formData.category_limits, { category: "", limit: "" }] })}
               onRemove={(i) => setFormData({ ...formData, category_limits: formData.category_limits.filter((_, x) => x !== i) })}
@@ -387,13 +395,10 @@ const Budget = () => {
   );
 };
 
-const S_violet = "#7B2FFF";
-
-/* Small helper components */
 const BudgetSection = ({ title, tooltip, children }: { title: string; tooltip: string; children: React.ReactNode }) => (
-  <div className="p-6 rounded-lg space-y-3" style={{ background: "hsl(215 56% 12%)", border: "1px solid hsl(210 46% 19%)" }}>
-    <div className="flex items-center gap-1.5 mb-4">
-      <h3 className="text-lg font-semibold font-display" style={{ color: "#E8F4FF" }}>{title}</h3>
+  <div className="p-5 rounded-lg space-y-3" style={{ background: "hsl(215 56% 12%)", border: "1px solid hsl(210 46% 19%)" }}>
+    <div className="flex items-center gap-1.5 mb-2">
+      <h3 className="text-base font-semibold font-display" style={{ color: "#E8F4FF" }}>{title}</h3>
       <HelpTooltip text={tooltip} />
     </div>
     {children}

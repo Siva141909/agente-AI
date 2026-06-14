@@ -1,36 +1,36 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Search, CheckCircle, XCircle, Clock, Home } from "lucide-react";
+import { Lightbulb, Search, CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import db from "@/services/database";
 import { toast } from "sonner";
 import type { Recommendation } from "@/services/database";
-import PageIntro from "@/components/PageIntro";
+
+const S = {
+  surface:  "hsl(215 56% 12%)",
+  surface2: "hsl(215 49% 15%)",
+  border:   "hsl(210 46% 19%)",
+  cyan:     "#00D4FF",
+  green:    "#00FF88",
+  danger:   "#FF3366",
+  textPri:  "#E8F4FF",
+  textSec:  "#6B8CAE",
+};
 
 const Tips = () => {
-  const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRec, setSelectedRec] = useState<Recommendation | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    status: "all",
-    priority: "all",
-    recommendation_type: "all",
-    search: "",
-  });
+  const [filters, setFilters] = useState({ status: "all", priority: "all", recommendation_type: "all", search: "" });
 
-  useEffect(() => {
-      loadRecommendations();
-  }, [filters]);
+  useEffect(() => { loadRecommendations(); }, [filters]);
 
   const loadRecommendations = async () => {
     try {
@@ -40,21 +40,13 @@ const Tips = () => {
         priority: filters.priority !== "all" ? filters.priority : undefined,
         recommendation_type: filters.recommendation_type !== "all" ? filters.recommendation_type : undefined,
       });
-      
-      // Apply search filter
       let filtered = data;
       if (filters.search) {
         const query = filters.search.toLowerCase();
-        filtered = data.filter(
-          (r) =>
-            r.title?.toLowerCase().includes(query) ||
-            r.description?.toLowerCase().includes(query)
-        );
+        filtered = data.filter(r => r.title?.toLowerCase().includes(query) || r.description?.toLowerCase().includes(query));
       }
-      
       setRecommendations(filtered);
-    } catch (error) {
-      console.error("Failed to load recommendations:", error);
+    } catch {
       toast.error("Failed to load recommendations");
     } finally {
       setIsLoading(false);
@@ -66,9 +58,7 @@ const Tips = () => {
       await db.recommendations.update(id, { status: "completed" });
       toast.success("Marked as completed!");
       loadRecommendations();
-    } catch (error) {
-      toast.error("Failed to update recommendation");
-    }
+    } catch { toast.error("Failed to update recommendation"); }
   };
 
   const getPriorityStyle = (priority: string): React.CSSProperties => {
@@ -82,68 +72,48 @@ const Tips = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
-        return <CheckCircle className="w-4 h-4" style={{ color: "#00FF88" }} />;
-      case "rejected":
-        return <XCircle className="w-4 h-4 text-muted-foreground" />;
-      default:
-        return <Clock className="w-4 h-4" style={{ color: "#FF6B35" }} />;
+      case "completed": return <CheckCircle className="w-4 h-4" style={{ color: S.green }} />;
+      case "rejected":  return <XCircle className="w-4 h-4" style={{ color: S.textSec }} />;
+      default:          return <Clock className="w-4 h-4" style={{ color: "#FF6B35" }} />;
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-4 pb-24 md:pb-8">
-        <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
-      </div>
-    );
+    return <div className="space-y-4 pb-24 md:pb-8"><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>;
   }
 
   return (
-    <div className="space-y-6">
-        {/* Header */}
+    <div className="space-y-6 page-in">
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} title="Back to Home">
-            <Home className="w-4 h-4" />
-          </Button>
-          <div>
-          <h1 className="text-3xl font-bold">AI Recommendations</h1>
-            <p className="text-muted-foreground">Personalized financial tips powered by AI</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold font-display" style={{ color: S.textPri }}>AI Recommendations</h1>
+          <p className="text-sm" style={{ color: S.textSec }}>Personalized financial tips powered by AI</p>
         </div>
-        <Button onClick={loadRecommendations} variant="outline">
-          🔄 Refresh Tips
+        <Button onClick={loadRecommendations} variant="outline" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+          <RefreshCw className="w-4 h-4 mr-1.5" />Refresh
         </Button>
       </div>
 
-      <PageIntro
-        title="What is this page?"
-        description="These are money suggestions tailored to you. Each tip explains what to change and how it can improve your situation."
-      />
-
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search recommendations..."
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="pl-10"
-              />
-            </div>
+      {/* ── Sticky filter bar ── */}
+      <div
+        className="sticky top-0 z-20 p-4 rounded-lg"
+        style={{ background: S.surface, border: `1px solid ${S.border}`, backdropFilter: "blur(12px)" }}
+      >
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: S.textSec }} />
+            <Input
+              placeholder="Search recommendations…"
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              className="pl-10"
+              style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}
+            />
           </div>
-          <Select
-            value={filters.status}
-            onValueChange={(v) => setFilters({ ...filters, status: v })}
-          >
-            <SelectTrigger className="w-full md:w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
+            <SelectTrigger className="w-full md:w-[140px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}><SelectValue /></SelectTrigger>
+            <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="accepted">Accepted</SelectItem>
@@ -152,28 +122,18 @@ const Tips = () => {
               <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
-          <Select
-            value={filters.priority}
-            onValueChange={(v) => setFilters({ ...filters, priority: v })}
-          >
-            <SelectTrigger className="w-full md:w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <Select value={filters.priority} onValueChange={(v) => setFilters({ ...filters, priority: v })}>
+            <SelectTrigger className="w-full md:w-[130px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}><SelectValue /></SelectTrigger>
+            <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <SelectItem value="all">All Priority</SelectItem>
               <SelectItem value="high">High</SelectItem>
               <SelectItem value="medium">Medium</SelectItem>
               <SelectItem value="low">Low</SelectItem>
             </SelectContent>
           </Select>
-          <Select
-            value={filters.recommendation_type}
-            onValueChange={(v) => setFilters({ ...filters, recommendation_type: v })}
-          >
-            <SelectTrigger className="w-full md:w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <Select value={filters.recommendation_type} onValueChange={(v) => setFilters({ ...filters, recommendation_type: v })}>
+            <SelectTrigger className="w-full md:w-[130px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}><SelectValue /></SelectTrigger>
+            <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="savings">Savings</SelectItem>
               <SelectItem value="budget">Budget</SelectItem>
@@ -183,177 +143,127 @@ const Tips = () => {
             </SelectContent>
           </Select>
         </div>
-      </Card>
+      </div>
 
-      {/* Recommendations Grid */}
-        {recommendations.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Lightbulb className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-lg font-semibold">No recommendations found</p>
-          <p className="text-muted-foreground mt-2">
+      {/* ── Recommendations Grid ── */}
+      {recommendations.length === 0 ? (
+        <div className="py-20 flex flex-col items-center gap-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+          <Lightbulb className="w-12 h-12 opacity-30" style={{ color: S.textSec }} />
+          <p className="text-lg font-semibold" style={{ color: S.textPri }}>No recommendations found</p>
+          <p className="text-sm" style={{ color: S.textSec }}>
             {filters.status !== "all" || filters.priority !== "all" || filters.search
               ? "Try adjusting your filters"
               : "Check back later for personalized recommendations"}
           </p>
-          </Card>
-        ) : (
+        </div>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {recommendations.map((rec) => (
-                <motion.div
+            <motion.div
               key={rec.recommendation_id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02, y: -5 }}
+              whileHover={{ y: -4 }}
             >
-              <Card className="p-6 h-full flex flex-col cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => {
-                  setSelectedRec(rec);
-                  setIsDetailOpen(true);
-                }}
+              <div
+                className="p-5 h-full flex flex-col cursor-pointer rounded-lg"
+                style={{ background: S.surface, border: `1px solid ${S.border}` }}
+                onClick={() => { setSelectedRec(rec); setIsDetailOpen(true); }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <Badge style={getPriorityStyle(rec.priority || "medium")}>
+                <div className="flex items-start justify-between mb-3">
+                  <Badge style={{ ...getPriorityStyle(rec.priority || "medium"), fontSize: 11 }}>
                     {rec.priority?.toUpperCase() || "MEDIUM"}
                   </Badge>
                   {getStatusIcon(rec.status)}
                 </div>
-
-                <h3 className="font-bold text-lg mb-2 line-clamp-2">{rec.title}</h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
-                  {rec.description}
-                </p>
-
-                <div className="flex items-center justify-between mt-auto pt-4 border-t">
-                  <div className="text-xs text-muted-foreground">
-                    {rec.confidence_score && (
-                      <span>Confidence: {Math.round(rec.confidence_score * 100)}%</span>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
+                <h3 className="font-bold text-base mb-2 line-clamp-2 font-display" style={{ color: S.textPri }}>{rec.title}</h3>
+                <p className="text-sm mb-4 line-clamp-3 flex-1" style={{ color: S.textSec }}>{rec.description}</p>
+                <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: `1px solid ${S.border}` }}>
+                  <span className="text-xs" style={{ color: S.textSec }}>
+                    {rec.confidence_score && `Confidence: ${Math.round(rec.confidence_score * 100)}%`}
+                  </span>
+                  <Button
+                    size="sm"
                     variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMarkDone(rec.recommendation_id);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); handleMarkDone(rec.recommendation_id); }}
+                    style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri, fontSize: 12 }}
                   >
                     Mark Done
-                        </Button>
-                      </div>
-                  </Card>
-                </motion.div>
-              ))}
-          </div>
-        )}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
-      {/* Detail Dialog */}
+      {/* ── Detail Dialog ── */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           {selectedRec && (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge style={getPriorityStyle(selectedRec.priority || "medium")}>
-                    {selectedRec.priority?.toUpperCase() || "MEDIUM"}
-                  </Badge>
+                  <Badge style={getPriorityStyle(selectedRec.priority || "medium")}>{selectedRec.priority?.toUpperCase() || "MEDIUM"}</Badge>
                   {getStatusIcon(selectedRec.status)}
                 </div>
-                <DialogTitle>{selectedRec.title}</DialogTitle>
-                <DialogDescription>{selectedRec.recommendation_type}</DialogDescription>
+                <DialogTitle style={{ color: S.textPri }}>{selectedRec.title}</DialogTitle>
+                <DialogDescription style={{ color: S.textSec }}>{selectedRec.recommendation_type}</DialogDescription>
               </DialogHeader>
-
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-sm text-muted-foreground">{selectedRec.description}</p>
-      </div>
-
+                  <h4 className="font-semibold mb-2 text-sm" style={{ color: S.textPri }}>Description</h4>
+                  <p className="text-sm" style={{ color: S.textSec }}>{selectedRec.description}</p>
+                </div>
                 {selectedRec.reasoning && (
                   <div>
-                    <h4 className="font-semibold mb-2">AI Reasoning</h4>
-                    <p className="text-sm text-muted-foreground">{selectedRec.reasoning}</p>
+                    <h4 className="font-semibold mb-2 text-sm" style={{ color: S.textPri }}>AI Reasoning</h4>
+                    <p className="text-sm" style={{ color: S.textSec }}>{selectedRec.reasoning}</p>
                   </div>
                 )}
-
                 {selectedRec.action_items && Array.isArray(selectedRec.action_items) && selectedRec.action_items.length > 0 && (
                   <div>
-                    <h4 className="font-semibold mb-2">Action Items</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                    <h4 className="font-semibold mb-2 text-sm" style={{ color: S.textPri }}>Action Items</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm" style={{ color: S.textSec }}>
                       {selectedRec.action_items.map((item: string | { step?: string; timeline?: string; [key: string]: any }, idx: number) => {
-                        // Handle both string and object formats
-                        const displayText = typeof item === 'string' 
-                          ? item 
-                          : (item?.step || (item as any)?.timeline || JSON.stringify(item));
-                        return (
-                          <li key={idx}>{displayText}</li>
-                        );
+                        const displayText = typeof item === "string" ? item : (item?.step || (item as any)?.timeline || JSON.stringify(item));
+                        return <li key={idx}>{displayText}</li>;
                       })}
                     </ul>
                   </div>
                 )}
-
                 <div className="grid grid-cols-2 gap-4">
                   {selectedRec.target_amount && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Target Amount</p>
-                      <p className="font-semibold">₹{selectedRec.target_amount.toLocaleString("en-IN")}</p>
+                      <p className="text-sm" style={{ color: S.textSec }}>Target Amount</p>
+                      <p className="font-semibold data-value" style={{ color: S.textPri }}>₹{selectedRec.target_amount.toLocaleString("en-IN")}</p>
                     </div>
                   )}
                   {selectedRec.confidence_score && (
-              <div>
-                      <p className="text-sm text-muted-foreground">Confidence</p>
-                      <p className="font-semibold">{Math.round(selectedRec.confidence_score * 100)}%</p>
-                  </div>
-                )}
-              </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Your Feedback</h4>
-                  <Textarea
-                    placeholder="What do you think about this recommendation?"
-                    defaultValue={selectedRec.user_feedback || ""}
-                    rows={3}
-                  />
+                    <div>
+                      <p className="text-sm" style={{ color: S.textSec }}>Confidence</p>
+                      <p className="font-semibold data-value" style={{ color: S.textPri }}>{Math.round(selectedRec.confidence_score * 100)}%</p>
+                    </div>
+                  )}
                 </div>
-
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm" style={{ color: S.textPri }}>Your Feedback</h4>
+                  <Textarea placeholder="What do you think about this recommendation?" defaultValue={selectedRec.user_feedback || ""} rows={3} />
+                </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await db.recommendations.update(selectedRec.recommendation_id, { status: "accepted" });
-                        toast.success("Marked as accepted!");
-                        setIsDetailOpen(false);
-                        loadRecommendations();
-                      } catch { toast.error("Failed to update"); }
-                    }}
-                  >
-                    Helpful
-                  </Button>
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      await db.recommendations.update(selectedRec.recommendation_id, { status: "rejected" });
-                      toast.success("Marked as not relevant");
-                      setIsDetailOpen(false);
-                      loadRecommendations();
-                    } catch { toast.error("Failed to update"); }
-                  }}
-                  >
-                    Not Relevant
-                </Button>
-                <Button
-                  onClick={() => {
-                      handleMarkDone(selectedRec.recommendation_id);
-                      setIsDetailOpen(false);
-                  }}
-                    className="flex-1"
-                >
+                  <Button variant="outline" onClick={async () => {
+                    try { await db.recommendations.update(selectedRec.recommendation_id, { status: "accepted" }); toast.success("Marked as accepted!"); setIsDetailOpen(false); loadRecommendations(); }
+                    catch { toast.error("Failed to update"); }
+                  }}>Helpful</Button>
+                  <Button variant="outline" onClick={async () => {
+                    try { await db.recommendations.update(selectedRec.recommendation_id, { status: "rejected" }); toast.success("Marked as not relevant"); setIsDetailOpen(false); loadRecommendations(); }
+                    catch { toast.error("Failed to update"); }
+                  }}>Not Relevant</Button>
+                  <Button onClick={() => { handleMarkDone(selectedRec.recommendation_id); setIsDetailOpen(false); }} className="flex-1" style={{ background: S.cyan, color: "#070D1A" }}>
                     Already Following This
-                </Button>
+                  </Button>
+                </div>
               </div>
-            </div>
             </>
           )}
         </DialogContent>

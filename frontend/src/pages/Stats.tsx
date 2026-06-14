@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Home } from "lucide-react";
-import { SkeletonChart, SkeletonStat } from "@/components/ui/skeleton-card";
+import { CalendarIcon } from "lucide-react";
+import { SkeletonChart } from "@/components/ui/skeleton-card";
 import { format, subDays } from "date-fns";
 import db from "@/services/database";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line,
 } from "recharts";
-import PageIntro from "@/components/PageIntro";
-import HelpTooltip from "@/components/HelpTooltip";
 
 const S = {
   surface:  "hsl(215 56% 12%)",
@@ -36,7 +33,6 @@ const tooltipStyle = {
 };
 
 const Stats = () => {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState({ from: subDays(new Date(), 30), to: new Date() });
   const [groupBy, setGroupBy] = useState<"day" | "week" | "month">("day");
@@ -45,7 +41,7 @@ const Stats = () => {
     to: new Date(),
   });
   const [stats, setStats] = useState({
-    total_income: 0, total_expense: 0, net_savings: 0,
+    total_income: 0, total_expense: 0,
     expense_by_category: [] as any[],
     income_vs_expense: [] as any[],
     income_trend: [] as any[],
@@ -70,7 +66,7 @@ const Stats = () => {
         categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + Number(t.amount));
       });
       const expenseByCategory = Array.from(categoryMap.entries())
-        .map(([category, amount]) => ({ category, amount, percentage: (amount / expense) * 100 }))
+        .map(([category, amount]) => ({ category, amount, percentage: expense > 0 ? (amount / expense) * 100 : 0 }))
         .sort((a, b) => b.amount - a.amount);
 
       const incomeExpenseTransactions = await db.transactions.getAll({
@@ -116,7 +112,7 @@ const Stats = () => {
         };
       } catch {}
 
-      setStats({ total_income: income, total_expense: expense, net_savings: income - expense, expense_by_category: expenseByCategory, income_vs_expense: incomeVsExpense, income_trend: incomeTrend, emergency_fund: emergencyFund });
+      setStats({ total_income: income, total_expense: expense, expense_by_category: expenseByCategory, income_vs_expense: incomeVsExpense, income_trend: incomeTrend, emergency_fund: emergencyFund });
     } catch (error) {
       console.error("Failed to load stats:", error);
     } finally {
@@ -125,37 +121,19 @@ const Stats = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-4 pb-24 md:pb-8">
-        <div className="grid grid-cols-2 gap-4"><SkeletonStat /><SkeletonStat /><SkeletonStat /><SkeletonStat /></div>
-        <SkeletonChart /><SkeletonChart />
-      </div>
-    );
+    return <div className="space-y-6 pb-24 md:pb-8"><SkeletonChart /><SkeletonChart /><SkeletonChart /></div>;
   }
 
   return (
     <div className="space-y-6 page-in">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-4">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => navigate("/dashboard")}
-          style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.textSec }}
-        >
-          <Home className="w-4 h-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold font-display" style={{ color: S.textPri }}>Statistics</h1>
-          <p className="text-sm" style={{ color: S.textSec }}>Analytics and insights</p>
-        </div>
-      </div>
 
-      <PageIntro title="What is this page?" description="Patterns in your money: when you earn more, where you spend, and how your money moves over time." />
-
-      {/* Filters */}
-      <div className="p-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-        <div className="flex flex-col md:flex-row gap-4">
+      {/* ── Sticky filter header ── */}
+      <div
+        className="sticky top-0 z-20 p-4 rounded-lg"
+        style={{ background: S.surface, border: `1px solid ${S.border}`, backdropFilter: "blur(12px)" }}
+      >
+        <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+          <h1 className="text-2xl font-bold font-display mr-auto" style={{ color: S.textPri }}>Statistics</h1>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full md:w-[240px] justify-start font-normal" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
@@ -163,7 +141,7 @@ const Stats = () => {
                 {format(dateRange.from, "MMM dd")} – {format(dateRange.to, "MMM dd")}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+            <PopoverContent className="w-auto p-0" align="end" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
               <Calendar
                 initialFocus mode="range"
                 defaultMonth={dateRange.from}
@@ -174,7 +152,7 @@ const Stats = () => {
             </PopoverContent>
           </Popover>
           <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
-            <SelectTrigger className="w-full md:w-[140px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+            <SelectTrigger className="w-full md:w-[130px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
@@ -186,27 +164,76 @@ const Stats = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Income",   value: stats.total_income,                           color: S.green },
-          { label: "Total Expenses", value: stats.total_expense,                          color: S.danger },
-          { label: "Net Savings",    value: stats.net_savings,                            color: S.textPri },
-          { label: "Balance",        value: stats.total_income - stats.total_expense,     color: S.cyan },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-            <p className="text-sm mb-2" style={{ color: S.textSec }}>{label}</p>
-            <p className="text-3xl font-bold data-value font-display" style={{ color }}>₹{value.toLocaleString("en-IN")}</p>
-          </div>
-        ))}
+      {/* ── Chart 1: Income vs Expenses bar (full width) ── */}
+      <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold font-display" style={{ color: S.textPri }}>Income vs Expenses</h3>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="text-[12px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textSec }}>
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {format(incomeExpenseDateRange.from, "MMM dd")} – {format(incomeExpenseDateRange.to, "MMM dd")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+              <Calendar
+                initialFocus mode="range"
+                defaultMonth={incomeExpenseDateRange.from}
+                selected={{ from: incomeExpenseDateRange.from, to: incomeExpenseDateRange.to }}
+                onSelect={(r) => {
+                  if (r?.from) {
+                    const start = r.from;
+                    const end = new Date(start); end.setDate(end.getDate() + 6);
+                    const today = new Date(); today.setHours(23, 59, 59, 999);
+                    setIncomeExpenseDateRange({ from: start, to: end > today ? today : end });
+                  }
+                }}
+                numberOfMonths={1}
+                disabled={(date) => { const t = new Date(); t.setHours(23, 59, 59, 999); return date > t; }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        {stats.income_vs_expense.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={stats.income_vs_expense}>
+              <CartesianGrid strokeDasharray="3 3" stroke={S.border} />
+              <XAxis dataKey="date" stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
+              <YAxis stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${v.toLocaleString("en-IN")}`} />
+              <Legend />
+              <Bar dataKey="income" fill={S.green} name="Income" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expense" fill={S.danger} name="Expense" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-[280px] flex items-center justify-center" style={{ color: S.textSec }}>No data for selected period</div>
+        )}
       </div>
 
-      {/* Charts Row 1 */}
+      {/* ── Charts 2 & 3: Income Trend + Expense Pie (side by side) ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+          <h3 className="text-lg font-semibold font-display mb-4" style={{ color: S.textPri }}>Income Trend</h3>
+          {stats.income_trend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={stats.income_trend}>
+                <CartesianGrid strokeDasharray="3 3" stroke={S.border} />
+                <XAxis dataKey="date" stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
+                <YAxis stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${v.toLocaleString("en-IN")}`} />
+                <Line type="monotone" dataKey="amount" stroke={S.cyan} strokeWidth={2} dot={{ fill: S.cyan, r: 3 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[260px] flex items-center justify-center" style={{ color: S.textSec }}>No income data</div>
+          )}
+        </div>
+
         <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           <h3 className="text-lg font-semibold font-display mb-4" style={{ color: S.textPri }}>Expenses by Category</h3>
           {stats.expense_by_category.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={stats.expense_by_category} cx="50%" cy="50%"
@@ -222,109 +249,38 @@ const Stats = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center" style={{ color: S.textSec }}>No expense data</div>
-          )}
-        </div>
-
-        <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold font-display" style={{ color: S.textPri }}>Income vs Expenses</h3>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="text-[12px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textSec }}>
-                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
-                  {format(incomeExpenseDateRange.from, "MMM dd")} – {format(incomeExpenseDateRange.to, "MMM dd")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-                <Calendar
-                  initialFocus mode="range"
-                  defaultMonth={incomeExpenseDateRange.from}
-                  selected={{ from: incomeExpenseDateRange.from, to: incomeExpenseDateRange.to }}
-                  onSelect={(r) => {
-                    if (r?.from) {
-                      const start = r.from;
-                      const end = new Date(start); end.setDate(end.getDate() + 6);
-                      const today = new Date(); today.setHours(23, 59, 59, 999);
-                      if (end > today) { end.setTime(today.getTime()); }
-                      setIncomeExpenseDateRange({ from: start, to: end });
-                    }
-                  }}
-                  numberOfMonths={1}
-                  disabled={(date) => { const t = new Date(); t.setHours(23, 59, 59, 999); return date > t; }}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          {stats.income_vs_expense.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.income_vs_expense}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210 46% 19%)" />
-                <XAxis dataKey="date" stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
-                <YAxis stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${v.toLocaleString("en-IN")}`} />
-                <Legend />
-                <Bar dataKey="income" fill={S.green} name="Income" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expense" fill={S.danger} name="Expense" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center" style={{ color: S.textSec }}>No data</div>
+            <div className="h-[260px] flex items-center justify-center" style={{ color: S.textSec }}>No expense data</div>
           )}
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-          <h3 className="text-lg font-semibold font-display mb-4" style={{ color: S.textPri }}>Income Trend</h3>
-          {stats.income_trend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={stats.income_trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210 46% 19%)" />
-                <XAxis dataKey="date" stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
-                <YAxis stroke={S.textSec} tick={{ fill: S.textSec, fontSize: 12 }} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₹${v.toLocaleString("en-IN")}`} />
-                <Line type="monotone" dataKey="amount" stroke={S.cyan} strokeWidth={2} dot={{ fill: S.cyan, r: 3 }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center" style={{ color: S.textSec }}>No income data</div>
-          )}
+      {/* ── Emergency Fund (unique to this page) ── */}
+      <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold font-display" style={{ color: S.textPri }}>Emergency Fund</h3>
+            <p className="text-sm" style={{ color: S.textSec }}>Set targets in Profile → Financial Profile</p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold data-value" style={{ color: S.cyan }}>
+              {stats.emergency_fund.months_covered.toFixed(1)} <span className="text-sm font-normal" style={{ color: S.textSec }}>months</span>
+            </p>
+          </div>
         </div>
-
-        <div className="p-6 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-          <h3 className="text-lg font-semibold font-display mb-4" style={{ color: S.textPri }}>Emergency Fund</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm" style={{ color: S.textSec }}>Current</span>
-                <span className="text-sm font-semibold data-value" style={{ color: S.green }}>
-                  ₹{stats.emergency_fund.current.toLocaleString("en-IN")}
-                </span>
-              </div>
-              <div className="w-full h-4 rounded-full" style={{ background: S.surface2 }}>
-                <div
-                  className="h-4 rounded-full transition-all"
-                  style={{
-                    width: `${Math.min(stats.emergency_fund.percentage, 100)}%`,
-                    background: `linear-gradient(90deg, ${S.cyan}, ${S.green})`,
-                  }}
-                />
-              </div>
-              <div className="flex justify-between mt-2">
-                <span className="text-xs" style={{ color: S.textSec }}>Target</span>
-                <span className="text-xs font-semibold data-value" style={{ color: S.textSec }}>
-                  ₹{stats.emergency_fund.target.toLocaleString("en-IN")}
-                </span>
-              </div>
-            </div>
-            <div className="pt-4" style={{ borderTop: `1px solid ${S.border}` }}>
-              <p className="text-sm" style={{ color: S.textSec }}>Months Covered</p>
-              <p className="text-2xl font-bold data-value" style={{ color: S.cyan }}>
-                {stats.emergency_fund.months_covered.toFixed(1)} months
-              </p>
-            </div>
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm mb-1">
+            <span style={{ color: S.textSec }}>Current</span>
+            <span className="font-semibold data-value" style={{ color: S.green }}>₹{stats.emergency_fund.current.toLocaleString("en-IN")}</span>
+          </div>
+          <div className="w-full h-3 rounded-full" style={{ background: S.surface2 }}>
+            <div
+              className="h-3 rounded-full transition-all"
+              style={{ width: `${Math.min(stats.emergency_fund.percentage, 100)}%`, background: `linear-gradient(90deg, ${S.cyan}, ${S.green})` }}
+            />
+          </div>
+          <div className="flex justify-between text-sm">
+            <span style={{ color: S.textSec }}>Target</span>
+            <span className="data-value" style={{ color: S.textSec }}>₹{stats.emergency_fund.target.toLocaleString("en-IN")}</span>
           </div>
         </div>
       </div>

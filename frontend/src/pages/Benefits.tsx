@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -9,17 +7,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Search, FileText, CheckCircle, Clock, XCircle, ExternalLink, Award } from "lucide-react";
+import { Search, FileText, CheckCircle, Clock, XCircle, ExternalLink, Award } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { motion } from "framer-motion";
 import db from "@/services/database";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import PageIntro from "@/components/PageIntro";
 import HelpTooltip from "@/components/HelpTooltip";
 
+const S = {
+  surface:  "hsl(215 56% 12%)",
+  surface2: "hsl(215 49% 15%)",
+  border:   "hsl(210 46% 19%)",
+  cyan:     "#00D4FF",
+  green:    "#00FF88",
+  danger:   "#FF3366",
+  textPri:  "#E8F4FF",
+  textSec:  "#6B8CAE",
+};
+
 const Benefits = () => {
-  const navigate = useNavigate();
   const [schemes, setSchemes] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,19 +34,10 @@ const Benefits = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"browse" | "my-applications">("browse");
-  const [filters, setFilters] = useState({
-    scheme_type: "all",
-    government_level: "all",
-    search: "",
-  });
-  const [applyFormData, setApplyFormData] = useState({
-    application_notes: "",
-    documents_submitted: [] as string[],
-  });
+  const [filters, setFilters] = useState({ scheme_type: "all", government_level: "all", search: "" });
+  const [applyFormData, setApplyFormData] = useState({ application_notes: "", documents_submitted: [] as string[] });
 
-  useEffect(() => {
-    loadData();
-  }, [filters, activeTab]);
+  useEffect(() => { loadData(); }, [filters, activeTab]);
 
   const loadData = async () => {
     try {
@@ -52,43 +50,29 @@ const Benefits = () => {
         }),
         db.userSchemeApplications.getAll(),
       ]);
-
-      // Apply search filter
       let filteredSchemes = schemesData;
       if (filters.search) {
         const query = filters.search.toLowerCase();
-        filteredSchemes = schemesData.filter(
-          (s) =>
-            s.scheme_name?.toLowerCase().includes(query) ||
-            s.description?.toLowerCase().includes(query) ||
-            s.scheme_code?.toLowerCase().includes(query)
+        filteredSchemes = schemesData.filter(s =>
+          s.scheme_name?.toLowerCase().includes(query) ||
+          s.description?.toLowerCase().includes(query) ||
+          s.scheme_code?.toLowerCase().includes(query)
         );
       }
-
       setSchemes(filteredSchemes);
       setApplications(applicationsData || []);
-    } catch (error) {
-      console.error("Failed to load schemes:", error);
+    } catch {
       toast.error("Failed to load government schemes");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleViewDetails = (scheme: any) => {
-    setSelectedScheme(scheme);
-    setIsDetailOpen(true);
-  };
-
-  const handleApply = (scheme: any) => {
-    setSelectedScheme(scheme);
-    setApplyFormData({ application_notes: "", documents_submitted: [] });
-    setIsApplyOpen(true);
-  };
+  const handleViewDetails = (scheme: any) => { setSelectedScheme(scheme); setIsDetailOpen(true); };
+  const handleApply = (scheme: any) => { setSelectedScheme(scheme); setApplyFormData({ application_notes: "", documents_submitted: [] }); setIsApplyOpen(true); };
 
   const handleSubmitApplication = async () => {
     if (!selectedScheme) return;
-
     try {
       await db.userSchemeApplications.create({
         scheme_id: selectedScheme.scheme_id,
@@ -97,131 +81,86 @@ const Benefits = () => {
         application_notes: applyFormData.application_notes || undefined,
         documents_submitted: applyFormData.documents_submitted.length > 0 ? applyFormData.documents_submitted : undefined,
       });
-
       toast.success("Application submitted successfully!");
-      setIsApplyOpen(false);
-      setSelectedScheme(null);
-      loadData();
-      setActiveTab("my-applications");
-    } catch (error) {
-      console.error("Failed to submit application:", error);
-      toast.error("Failed to submit application");
-    }
+      setIsApplyOpen(false); setSelectedScheme(null);
+      loadData(); setActiveTab("my-applications");
+    } catch { toast.error("Failed to submit application"); }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "approved":
-      case "completed":
-        return <Badge style={{ background: "rgba(0,255,136,0.15)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.3)" }}>Approved</Badge>;
-      case "rejected":
-        return <Badge style={{ background: "rgba(255,51,102,0.12)", color: "#FF3366", border: "1px solid rgba(255,51,102,0.25)" }}>Rejected</Badge>;
+      case "completed":  return <Badge style={{ background: "rgba(0,255,136,0.15)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.3)" }}>Approved</Badge>;
+      case "rejected":   return <Badge style={{ background: "rgba(255,51,102,0.12)", color: "#FF3366", border: "1px solid rgba(255,51,102,0.25)" }}>Rejected</Badge>;
       case "under_review":
-      case "processing":
-        return <Badge style={{ background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" }}>Under Review</Badge>;
-      default:
-        return <Badge style={{ background: "rgba(0,212,255,0.10)", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.25)" }}>Submitted</Badge>;
+      case "processing": return <Badge style={{ background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" }}>Under Review</Badge>;
+      default:           return <Badge style={{ background: "rgba(0,212,255,0.10)", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.25)" }}>Submitted</Badge>;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
       case "approved":
-      case "completed":
-        return <CheckCircle className="w-4 h-4" style={{ color: "#00FF88" }} />;
-      case "rejected":
-        return <XCircle className="w-4 h-4 text-muted-foreground" />;
-      default:
-        return <Clock className="w-4 h-4" style={{ color: "#FF6B35" }} />;
+      case "completed": return <CheckCircle className="w-4 h-4" style={{ color: "#00FF88" }} />;
+      case "rejected":  return <XCircle className="w-4 h-4" style={{ color: "#FF3366" }} />;
+      default:          return <Clock className="w-4 h-4" style={{ color: "#FF6B35" }} />;
     }
   };
 
   const schemeTypes = [
-    { value: "all", label: "All Types" },
-    { value: "health", label: "Health" },
-    { value: "pension", label: "Pension" },
-    { value: "insurance", label: "Insurance" },
-    { value: "social_security", label: "Social Security" },
-    { value: "education", label: "Education" },
-    { value: "housing", label: "Housing" },
-    { value: "employment", label: "Employment" },
+    { value: "all", label: "All Types" }, { value: "health", label: "Health" },
+    { value: "pension", label: "Pension" }, { value: "insurance", label: "Insurance" },
+    { value: "social_security", label: "Social Security" }, { value: "education", label: "Education" },
+    { value: "housing", label: "Housing" }, { value: "employment", label: "Employment" },
   ];
 
   if (isLoading) {
-    return (
-      <div className="space-y-4 pb-24 md:pb-8">
-        <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
-      </div>
-    );
+    return <div className="space-y-4 pb-24 md:pb-8"><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} title="Back to Home">
-            <Home className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-[32px] font-semibold tracking-tight text-foreground">Government Benefits</h1>
-            <p className="text-[15px] text-muted-foreground">Discover and apply for government schemes</p>
-          </div>
-        </div>
+    <div className="space-y-6 page-in">
+      {/* ── Header ── */}
+      <div>
+        <h1 className="text-3xl font-bold font-display" style={{ color: S.textPri }}>Government Benefits</h1>
+        <p className="text-sm" style={{ color: S.textSec }}>Discover and apply for government schemes</p>
       </div>
 
-      <PageIntro
-        title="What is this page?"
-        description="Here you can see government schemes and benefits you may qualify for, based on your work type, income, and location."
-      />
-
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "browse" | "my-applications")}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="browse">Browse Schemes</TabsTrigger>
-          <TabsTrigger value="my-applications">
-            My Applications ({applications.length})
+        <TabsList className="mb-4" style={{ background: S.surface2 }}>
+          <TabsTrigger value="browse" style={{ color: S.textSec }}>Browse Schemes</TabsTrigger>
+          <TabsTrigger value="my-applications" style={{ color: S.textSec }}>
+            My Applications {applications.length > 0 && <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded" style={{ background: "rgba(0,212,255,0.15)", color: S.cyan }}>{applications.length}</span>}
           </TabsTrigger>
         </TabsList>
 
-        {/* Browse Schemes Tab */}
-        <TabsContent value="browse" className="space-y-6">
-          {/* Filters */}
-          <div className="bg-background border border-border/40 rounded-[6px] p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search schemes by name, code, or description..."
-                    value={filters.search}
-                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    className="pl-10"
-                  />
-                </div>
+        {/* ── Browse Tab ── */}
+        <TabsContent value="browse" className="space-y-5">
+          {/* Sticky filter bar */}
+          <div
+            className="sticky top-0 z-20 p-4 rounded-lg"
+            style={{ background: S.surface, border: `1px solid ${S.border}`, backdropFilter: "blur(12px)" }}
+          >
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: S.textSec }} />
+                <Input
+                  placeholder="Search schemes by name, code, or description…"
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  className="pl-10"
+                  style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}
+                />
               </div>
-              <Select
-                value={filters.scheme_type}
-                onValueChange={(v) => setFilters({ ...filters, scheme_type: v })}
-              >
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {schemeTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
+              <Select value={filters.scheme_type} onValueChange={(v) => setFilters({ ...filters, scheme_type: v })}>
+                <SelectTrigger className="w-full md:w-[160px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}><SelectValue /></SelectTrigger>
+                <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+                  {schemeTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select
-                value={filters.government_level}
-                onValueChange={(v) => setFilters({ ...filters, government_level: v })}
-              >
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+              <Select value={filters.government_level} onValueChange={(v) => setFilters({ ...filters, government_level: v })}>
+                <SelectTrigger className="w-full md:w-[140px]" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}><SelectValue /></SelectTrigger>
+                <SelectContent style={{ background: S.surface, border: `1px solid ${S.border}` }}>
                   <SelectItem value="all">All Levels</SelectItem>
                   <SelectItem value="central">Central</SelectItem>
                   <SelectItem value="state">State</SelectItem>
@@ -230,12 +169,12 @@ const Benefits = () => {
             </div>
           </div>
 
-          {/* Schemes Grid */}
+          {/* 3-col card grid */}
           {schemes.length === 0 ? (
-            <div className="bg-background border border-border/40 rounded-[6px] p-12 text-center shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
-              <Award className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-[18px] font-semibold mb-2">No schemes found</p>
-              <p className="text-[14px] text-muted-foreground">
+            <div className="py-20 flex flex-col items-center gap-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+              <Award className="w-12 h-12 opacity-30" style={{ color: S.textSec }} />
+              <p className="text-lg font-semibold" style={{ color: S.textPri }}>No schemes found</p>
+              <p className="text-sm" style={{ color: S.textSec }}>
                 {filters.search || filters.scheme_type !== "all" || filters.government_level !== "all"
                   ? "Try adjusting your filters"
                   : "No government schemes available at the moment"}
@@ -244,77 +183,44 @@ const Benefits = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {schemes.map((scheme) => {
-                const userApplication = applications.find(
-                  (app) => app.scheme_id === scheme.scheme_id
-                );
+                const userApplication = applications.find(app => app.scheme_id === scheme.scheme_id);
                 const hasApplied = !!userApplication;
-
                 return (
-                  <motion.div
-                    key={scheme.scheme_id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -2 }}
-                  >
-                    <div className="bg-background border border-border/40 rounded-[6px] p-5 h-full flex flex-col shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] hover:shadow-[0_2px_4px_0_rgba(0,0,0,0.08)] transition-shadow">
+                  <motion.div key={scheme.scheme_id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -3 }}>
+                    <div
+                      className="h-full flex flex-col p-5 rounded-lg cursor-pointer"
+                      style={{ background: S.surface, border: `1px solid ${S.border}` }}
+                    >
                       <div className="flex items-start justify-between mb-3">
-                        <Badge
-                          variant="outline"
-                          className="text-[11px] font-medium"
-                        >
+                        <Badge style={{ background: "rgba(0,212,255,0.10)", color: S.cyan, border: `1px solid rgba(0,212,255,0.25)`, fontSize: 11 }}>
                           {scheme.government_level === "central" ? "Central" : "State"}
                         </Badge>
                         {hasApplied && getStatusIcon(userApplication.application_status)}
                       </div>
-
-                      <h3 className="text-[18px] font-semibold tracking-tight mb-2 line-clamp-2">
-                        {scheme.scheme_name}
-                      </h3>
-                      {scheme.scheme_code && (
-                        <p className="text-[12px] text-muted-foreground mb-2">Code: {scheme.scheme_code}</p>
-                      )}
-                      <p className="text-[13px] text-muted-foreground mb-4 line-clamp-3 flex-1">
-                        {scheme.description}
-                      </p>
-
+                      <h3 className="text-base font-semibold font-display mb-2 line-clamp-2" style={{ color: S.textPri }}>{scheme.scheme_name}</h3>
+                      {scheme.scheme_code && <p className="text-xs mb-2" style={{ color: S.textSec }}>Code: {scheme.scheme_code}</p>}
+                      <p className="text-sm mb-4 line-clamp-3 flex-1" style={{ color: S.textSec }}>{scheme.description}</p>
                       {scheme.max_benefit_amount && (
-                        <div className="mb-3 p-2 bg-muted/30 rounded-[4px]">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <p className="text-[11px] text-muted-foreground">Max Benefit</p>
-                            <HelpTooltip text="Maximum value or coverage you can get from this scheme if you are eligible and approved." />
+                        <div className="mb-3 p-2 rounded-lg" style={{ background: S.surface2 }}>
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <p className="text-xs" style={{ color: S.textSec }}>Max Benefit</p>
+                            <HelpTooltip text="Maximum value or coverage from this scheme if you are eligible and approved." />
                           </div>
-                          <p className="text-[15px] font-semibold">
-                            ₹{Number(scheme.max_benefit_amount).toLocaleString("en-IN")}
-                          </p>
+                          <p className="font-semibold" style={{ color: S.green }}>₹{Number(scheme.max_benefit_amount).toLocaleString("en-IN")}</p>
                         </div>
                       )}
-
-                      <div className="flex gap-2 mt-auto pt-4 border-t border-border/40">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(scheme)}
-                          className="flex-1 text-[13px]"
-                        >
-                          View Details
+                      <div className="flex gap-2 mt-auto pt-3" style={{ borderTop: `1px solid ${S.border}` }}>
+                        <Button variant="outline" size="sm" onClick={() => handleViewDetails(scheme)} className="flex-1 text-xs"
+                          style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+                          Details
                         </Button>
                         {!hasApplied ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleApply(scheme)}
-                            className="flex-1 text-[13px]"
-                          >
+                          <Button size="sm" onClick={() => handleApply(scheme)} className="flex-1 text-xs" style={{ background: S.cyan, color: "#070D1A" }}>
                             Apply
                           </Button>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setActiveTab("my-applications");
-                            }}
-                            className="flex-1 text-[13px]"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => setActiveTab("my-applications")} className="flex-1 text-xs"
+                            style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textSec }}>
                             View Status
                           </Button>
                         )}
@@ -327,88 +233,58 @@ const Benefits = () => {
           )}
         </TabsContent>
 
-        {/* My Applications Tab */}
+        {/* ── My Applications Tab ── */}
         <TabsContent value="my-applications" className="space-y-4">
           {applications.length === 0 ? (
-            <div className="bg-background border border-border/40 rounded-[6px] p-12 text-center shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
-              <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-[18px] font-semibold mb-2">No applications yet</p>
-              <p className="text-[14px] text-muted-foreground mb-4">
-                Browse schemes and apply for benefits you're eligible for
-              </p>
-              <Button onClick={() => setActiveTab("browse")} variant="outline">
-                Browse Schemes
-              </Button>
+            <div className="py-20 flex flex-col items-center gap-4 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
+              <FileText className="w-12 h-12 opacity-30" style={{ color: S.textSec }} />
+              <p className="text-lg font-semibold" style={{ color: S.textPri }}>No applications yet</p>
+              <p className="text-sm" style={{ color: S.textSec }}>Browse schemes and apply for benefits you're eligible for</p>
+              <Button onClick={() => setActiveTab("browse")} style={{ background: S.cyan, color: "#070D1A" }}>Browse Schemes</Button>
             </div>
           ) : (
             <div className="space-y-3">
               {applications.map((app) => {
                 const scheme = app.government_schemes;
                 return (
-                  <div
-                    key={app.id}
-                    className="bg-background border border-border/40 rounded-[6px] p-5 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
-                  >
+                  <div key={app.id} className="p-5 rounded-lg" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-[18px] font-semibold tracking-tight">
-                            {scheme?.scheme_name || "Unknown Scheme"}
-                          </h3>
+                          <h3 className="text-base font-semibold font-display" style={{ color: S.textPri }}>{scheme?.scheme_name || "Unknown Scheme"}</h3>
                           {getStatusBadge(app.application_status)}
                         </div>
-                        {scheme?.scheme_code && (
-                          <p className="text-[12px] text-muted-foreground mb-2">Code: {scheme.scheme_code}</p>
-                        )}
+                        {scheme?.scheme_code && <p className="text-xs" style={{ color: S.textSec }}>Code: {scheme.scheme_code}</p>}
                       </div>
                       {getStatusIcon(app.application_status)}
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-3 text-[13px]">
+                    <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Application Date</p>
-                        <p className="font-medium">
-                          {app.application_date
-                            ? format(new Date(app.application_date), "MMM dd, yyyy")
-                            : "N/A"}
-                        </p>
+                        <p style={{ color: S.textSec }}>Application Date</p>
+                        <p className="font-medium" style={{ color: S.textPri }}>{app.application_date ? format(new Date(app.application_date), "MMM dd, yyyy") : "N/A"}</p>
                       </div>
                       {app.approval_date && (
                         <div>
-                          <p className="text-muted-foreground">Approval Date</p>
-                          <p className="font-medium">
-                            {format(new Date(app.approval_date), "MMM dd, yyyy")}
-                          </p>
+                          <p style={{ color: S.textSec }}>Approval Date</p>
+                          <p className="font-medium" style={{ color: S.textPri }}>{format(new Date(app.approval_date), "MMM dd, yyyy")}</p>
                         </div>
                       )}
                       {app.benefit_received && (
                         <div>
-                          <p className="text-muted-foreground">Benefit Received</p>
-                          <p className="font-medium" style={{ color: "#00FF88" }}>
-                            ₹{Number(app.benefit_received).toLocaleString("en-IN")}
-                          </p>
+                          <p style={{ color: S.textSec }}>Benefit Received</p>
+                          <p className="font-medium data-value" style={{ color: S.green }}>₹{Number(app.benefit_received).toLocaleString("en-IN")}</p>
                         </div>
                       )}
                     </div>
-
                     {app.application_notes && (
-                      <div className="mb-3 p-3 bg-muted/30 rounded-[4px]">
-                        <p className="text-[12px] text-muted-foreground mb-1">Notes</p>
-                        <p className="text-[13px]">{app.application_notes}</p>
+                      <div className="mb-3 p-3 rounded-lg" style={{ background: S.surface2 }}>
+                        <p className="text-xs mb-1" style={{ color: S.textSec }}>Notes</p>
+                        <p className="text-sm" style={{ color: S.textPri }}>{app.application_notes}</p>
                       </div>
                     )}
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const schemeData = schemes.find((s) => s.scheme_id === app.scheme_id);
-                        if (schemeData) {
-                          handleViewDetails(schemeData);
-                        }
-                      }}
-                      className="w-full text-[13px]"
-                    >
+                    <Button variant="outline" size="sm" className="w-full"
+                      onClick={() => { const s = schemes.find(s => s.scheme_id === app.scheme_id); if (s) handleViewDetails(s); }}
+                      style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
                       View Scheme Details
                     </Button>
                   </div>
@@ -421,158 +297,94 @@ const Benefits = () => {
 
       {/* Scheme Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           {selectedScheme && (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline" className="text-[11px]">
+                  <Badge style={{ background: "rgba(0,212,255,0.10)", color: S.cyan, border: "1px solid rgba(0,212,255,0.25)", fontSize: 11 }}>
                     {selectedScheme.government_level === "central" ? "Central" : "State"} Government
                   </Badge>
                   {selectedScheme.scheme_type && (
-                    <Badge variant="outline" className="text-[11px] capitalize">
+                    <Badge style={{ background: S.surface2, color: S.textSec, border: `1px solid ${S.border}`, fontSize: 11 }} className="capitalize">
                       {selectedScheme.scheme_type.replace("_", " ")}
                     </Badge>
                   )}
                 </div>
-                <DialogTitle className="text-[20px] font-semibold">{selectedScheme.scheme_name}</DialogTitle>
-                {selectedScheme.scheme_code && (
-                  <DialogDescription>Scheme Code: {selectedScheme.scheme_code}</DialogDescription>
-                )}
+                <DialogTitle style={{ color: S.textPri }}>{selectedScheme.scheme_name}</DialogTitle>
+                {selectedScheme.scheme_code && <DialogDescription style={{ color: S.textSec }}>Scheme Code: {selectedScheme.scheme_code}</DialogDescription>}
               </DialogHeader>
-
               <div className="space-y-5">
                 <div>
-                  <h4 className="text-[15px] font-semibold mb-2">Description</h4>
-                  <p className="text-[14px] text-muted-foreground leading-relaxed">{selectedScheme.description}</p>
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: S.textPri }}>Description</h4>
+                  <p className="text-sm leading-relaxed" style={{ color: S.textSec }}>{selectedScheme.description}</p>
                 </div>
-
                 {selectedScheme.benefits && (
                   <div>
-                    <h4 className="text-[15px] font-semibold mb-2">Benefits</h4>
-                    <div className="bg-muted/30 rounded-[6px] p-4 border border-border/40">
-                      <p className="text-[14px] text-muted-foreground whitespace-pre-line">
-                        {selectedScheme.benefits}
-                      </p>
+                    <h4 className="text-sm font-semibold mb-2" style={{ color: S.textPri }}>Benefits</h4>
+                    <div className="p-4 rounded-lg" style={{ background: S.surface2, border: `1px solid ${S.border}` }}>
+                      <p className="text-sm whitespace-pre-line" style={{ color: S.textSec }}>{selectedScheme.benefits}</p>
                     </div>
                   </div>
                 )}
-
                 {selectedScheme.max_benefit_amount && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[13px] text-muted-foreground mb-1">Maximum Benefit</p>
-                      <p className="text-[20px] font-semibold">
-                        ₹{Number(selectedScheme.max_benefit_amount).toLocaleString("en-IN")}
-                      </p>
+                      <p className="text-xs mb-1" style={{ color: S.textSec }}>Maximum Benefit</p>
+                      <p className="text-xl font-bold data-value font-display" style={{ color: S.green }}>₹{Number(selectedScheme.max_benefit_amount).toLocaleString("en-IN")}</p>
                     </div>
                     {selectedScheme.interest_rate && (
                       <div>
-                        <p className="text-[13px] text-muted-foreground mb-1">Interest Rate</p>
-                        <p className="text-[20px] font-semibold">{selectedScheme.interest_rate}%</p>
+                        <p className="text-xs mb-1" style={{ color: S.textSec }}>Interest Rate</p>
+                        <p className="text-xl font-bold data-value" style={{ color: S.textPri }}>{selectedScheme.interest_rate}%</p>
                       </div>
                     )}
                   </div>
                 )}
-
                 {selectedScheme.eligibility_criteria && (
                   <div>
-                    <h4 className="text-[15px] font-semibold mb-2">Eligibility Criteria</h4>
-                    <div className="bg-muted/30 rounded-[6px] p-4 border border-border/40">
+                    <h4 className="text-sm font-semibold mb-2" style={{ color: S.textPri }}>Eligibility Criteria</h4>
+                    <div className="p-4 rounded-lg" style={{ background: S.surface2, border: `1px solid ${S.border}` }}>
                       {typeof selectedScheme.eligibility_criteria === "string" ? (
-                        <p className="text-[14px] text-muted-foreground whitespace-pre-line">
-                          {selectedScheme.eligibility_criteria}
-                        </p>
+                        <p className="text-sm whitespace-pre-line" style={{ color: S.textSec }}>{selectedScheme.eligibility_criteria}</p>
                       ) : (
-                        <ul className="list-disc list-inside space-y-1 text-[14px] text-muted-foreground">
+                        <ul className="list-disc list-inside space-y-1 text-sm" style={{ color: S.textSec }}>
                           {Object.entries(selectedScheme.eligibility_criteria).map(([key, value]: [string, any]) => (
-                            <li key={key}>
-                              <span className="font-medium">{key}:</span> {String(value)}
-                            </li>
+                            <li key={key}><span className="font-medium" style={{ color: S.textPri }}>{key}:</span> {String(value)}</li>
                           ))}
                         </ul>
                       )}
                     </div>
                   </div>
                 )}
-
-                {selectedScheme.application_process && (
-                  <div>
-                    <h4 className="text-[15px] font-semibold mb-2">Application Process</h4>
-                    <div className="bg-muted/30 rounded-[6px] p-4 border border-border/40">
-                      <p className="text-[14px] text-muted-foreground whitespace-pre-line">
-                        {selectedScheme.application_process}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {selectedScheme.required_documents && (
                   <div>
-                    <h4 className="text-[15px] font-semibold mb-2">Required Documents</h4>
-                    <div className="bg-muted/30 rounded-[6px] p-4 border border-border/40">
+                    <h4 className="text-sm font-semibold mb-2" style={{ color: S.textPri }}>Required Documents</h4>
+                    <div className="p-4 rounded-lg" style={{ background: S.surface2, border: `1px solid ${S.border}` }}>
                       {Array.isArray(selectedScheme.required_documents) ? (
-                        <ul className="list-disc list-inside space-y-1 text-[14px] text-muted-foreground">
-                          {selectedScheme.required_documents.map((doc: string, idx: number) => (
-                            <li key={idx}>{doc}</li>
-                          ))}
+                        <ul className="list-disc list-inside space-y-1 text-sm" style={{ color: S.textSec }}>
+                          {selectedScheme.required_documents.map((doc: string, idx: number) => <li key={idx}>{doc}</li>)}
                         </ul>
                       ) : typeof selectedScheme.required_documents === "object" ? (
-                        <ul className="list-disc list-inside space-y-1 text-[14px] text-muted-foreground">
-                          {Object.values(selectedScheme.required_documents).map((doc: any, idx: number) => (
-                            <li key={idx}>{String(doc)}</li>
-                          ))}
+                        <ul className="list-disc list-inside space-y-1 text-sm" style={{ color: S.textSec }}>
+                          {Object.values(selectedScheme.required_documents).map((doc: any, idx: number) => <li key={idx}>{String(doc)}</li>)}
                         </ul>
                       ) : (
-                        <p className="text-[14px] text-muted-foreground">
-                          {String(selectedScheme.required_documents)}
-                        </p>
+                        <p className="text-sm" style={{ color: S.textSec }}>{String(selectedScheme.required_documents)}</p>
                       )}
                     </div>
                   </div>
                 )}
-
-                {selectedScheme.valid_from && selectedScheme.valid_until && (
-                  <div className="grid grid-cols-2 gap-4 text-[13px]">
-                    <div>
-                      <p className="text-muted-foreground">Valid From</p>
-                      <p className="font-medium">
-                        {format(new Date(selectedScheme.valid_from), "MMM dd, yyyy")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Valid Until</p>
-                      <p className="font-medium">
-                        {format(new Date(selectedScheme.valid_until), "MMM dd, yyyy")}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {selectedScheme.official_url && (
-                  <div>
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(selectedScheme.official_url, "_blank")}
-                      className="w-full"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Visit Official Website
-                    </Button>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={() => setIsDetailOpen(false)} className="flex-1">
-                    Close
+                  <Button variant="outline" onClick={() => window.open(selectedScheme.official_url, "_blank")} className="w-full"
+                    style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>
+                    <ExternalLink className="w-4 h-4 mr-2" />Visit Official Website
                   </Button>
-                  {!applications.find((app) => app.scheme_id === selectedScheme.scheme_id) && (
-                    <Button onClick={() => {
-                      setIsDetailOpen(false);
-                      handleApply(selectedScheme);
-                    }} className="flex-1">
-                      Apply Now
-                    </Button>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={() => setIsDetailOpen(false)} className="flex-1" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textPri }}>Close</Button>
+                  {!applications.find(app => app.scheme_id === selectedScheme.scheme_id) && (
+                    <Button onClick={() => { setIsDetailOpen(false); handleApply(selectedScheme); }} className="flex-1" style={{ background: S.cyan, color: "#070D1A" }}>Apply Now</Button>
                   )}
                 </div>
               </div>
@@ -583,65 +395,40 @@ const Benefits = () => {
 
       {/* Apply Dialog */}
       <Dialog open={isApplyOpen} onOpenChange={setIsApplyOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           {selectedScheme && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-[18px] font-semibold">Apply for {selectedScheme.scheme_name}</DialogTitle>
-                <DialogDescription className="text-[13px]">
-                  Fill in the application details below
-                </DialogDescription>
+                <DialogTitle style={{ color: S.textPri }}>Apply for {selectedScheme.scheme_name}</DialogTitle>
+                <DialogDescription style={{ color: S.textSec }}>Fill in the application details below</DialogDescription>
               </DialogHeader>
-
               <div className="space-y-4 py-4">
-                <div className="bg-muted/30 rounded-[6px] p-4 border border-border/40">
-                  <p className="text-[13px] text-muted-foreground mb-2">
-                    <strong>Application Date:</strong> {format(new Date(), "MMMM dd, yyyy")}
-                  </p>
-                  <p className="text-[13px] text-muted-foreground">
-                    <strong>Status:</strong> Will be set to "Submitted" upon application
-                  </p>
+                <div className="p-3 rounded-lg" style={{ background: S.surface2, border: `1px solid ${S.border}` }}>
+                  <p className="text-sm" style={{ color: S.textSec }}><strong style={{ color: S.textPri }}>Application Date:</strong> {format(new Date(), "MMMM dd, yyyy")}</p>
+                  <p className="text-sm mt-1" style={{ color: S.textSec }}><strong style={{ color: S.textPri }}>Status:</strong> Will be set to "Submitted" upon application</p>
                 </div>
-
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-medium">Application Notes (Optional)</Label>
-                  <Textarea
-                    value={applyFormData.application_notes}
-                    onChange={(e) => setApplyFormData({ ...applyFormData, application_notes: e.target.value })}
-                    placeholder="Add any additional notes or information..."
-                    rows={4}
-                  />
+                  <Label style={{ color: S.textSec }}>Application Notes (Optional)</Label>
+                  <Textarea value={applyFormData.application_notes} onChange={(e) => setApplyFormData({ ...applyFormData, application_notes: e.target.value })} placeholder="Add any additional notes or information..." rows={4} />
                 </div>
-
                 {selectedScheme.required_documents && (
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-medium">Required Documents</Label>
-                    <div className="bg-muted/30 rounded-[6px] p-3 border border-border/40">
+                    <Label style={{ color: S.textSec }}>Required Documents</Label>
+                    <div className="p-3 rounded-lg" style={{ background: S.surface2, border: `1px solid ${S.border}` }}>
                       {Array.isArray(selectedScheme.required_documents) ? (
-                        <ul className="list-disc list-inside space-y-1 text-[13px] text-muted-foreground">
-                          {selectedScheme.required_documents.map((doc: string, idx: number) => (
-                            <li key={idx}>{doc}</li>
-                          ))}
+                        <ul className="list-disc list-inside space-y-1 text-sm" style={{ color: S.textSec }}>
+                          {selectedScheme.required_documents.map((doc: string, idx: number) => <li key={idx}>{doc}</li>)}
                         </ul>
                       ) : (
-                        <p className="text-[13px] text-muted-foreground">
-                          Please refer to the scheme details for required documents.
-                        </p>
+                        <p className="text-sm" style={{ color: S.textSec }}>Please refer to the scheme details for required documents.</p>
                       )}
                     </div>
-                    <p className="text-[12px] text-muted-foreground">
-                      Note: Document submission will be handled through the official application process.
-                    </p>
+                    <p className="text-xs" style={{ color: S.textSec }}>Note: Document submission will be handled through the official application process.</p>
                   </div>
                 )}
-
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={() => setIsApplyOpen(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSubmitApplication} className="flex-1">
-                    Submit Application
-                  </Button>
+                  <Button variant="outline" onClick={() => setIsApplyOpen(false)} className="flex-1">Cancel</Button>
+                  <Button onClick={handleSubmitApplication} className="flex-1" style={{ background: S.cyan, color: "#070D1A" }}>Submit Application</Button>
                 </div>
               </div>
             </>
@@ -653,5 +440,3 @@ const Benefits = () => {
 };
 
 export default Benefits;
-
-
