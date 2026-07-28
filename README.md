@@ -57,27 +57,46 @@ npm install
 
 # Create .env file
 cp .env.example .env
-# Edit .env and add your Supabase credentials
+# Edit .env and set:
+#   VITE_SUPABASE_URL=<your supabase project url>
+#   VITE_SUPABASE_ANON_KEY=<your supabase anon key>
+#   VITE_API_BASE_URL=http://localhost:8000   (no /api/v1 — routers are mounted at /api/*)
 
 npm run dev
-# Frontend runs at http://localhost:5173
+# Frontend runs at http://localhost:8080 (see frontend/vite.config.ts)
 ```
 
 ### 3. Backend Setup
 
 ```bash
 cd backend_spare
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create .env file
 cp .env.example .env
-# Edit .env and add your API keys
+# Edit .env and set:
+#   SUPABASE_URL=<same url as frontend>
+#   SUPABASE_ANON_KEY=<same anon key as frontend>
+#   ALLOWED_ORIGINS=http://localhost:8080   (must match the frontend's actual dev port)
+#   PORT=8000
 
-uvicorn main:app --reload
+python -m uvicorn main:app --reload --port 8000
 # Backend runs at http://localhost:8000
+# Note: this is a CRUD API only (auth/users/transactions/budget/tax/etc).
+# The AI agents in agents/ are not mounted here and require no API keys to run this server.
 ```
+
+**Demo login credentials** (seeded via `database/schema.sql` + `database/auth_migration.sql`):
+
+| Phone | Password |
+|---|---|
+| `9951778715` | `Demo@1234!` |
+| `7207364460` | `Demo@1234!` |
+| `9790958879` | `Demo@1234!` |
+
+Enter just the 10 digits on the Login page.
 
 ### 4. Transaction Parser (Optional)
 
@@ -250,7 +269,8 @@ npm run dev
 
 ```bash
 cd backend_spare
-uvicorn main:app --reload
+source venv/bin/activate
+python -m uvicorn main:app --reload --port 8000
 ```
 
 ### Run Tests
