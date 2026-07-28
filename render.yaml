@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: agente-ai-backend
+    runtime: docker
+    dockerfilePath: ./backend_spare/Dockerfile
+    dockerContext: ./backend_spare
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false

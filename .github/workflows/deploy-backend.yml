@@ -1,7 +1,7 @@
-name: Deploy Backend → Railway
+name: Deploy Backend → Render
 
-# Railway auto-deploys via GitHub integration on push to main.
-# This workflow only runs checks; actual deploy is handled by Railway's GitHub App.
+# Render auto-deploys via GitHub integration on push to main (see render.yaml).
+# This workflow only runs checks; actual deploy is handled by Render.
 
 on:
   push:

@@ -298,14 +298,23 @@ vercel --prod
 # or: netlify deploy --prod --dir=dist
 ```
 
-### Backend (Railway/Render)
+### Backend (Render)
+
+Deployed via `render.yaml` (Blueprint) at the repo root — Render builds
+`backend_spare/Dockerfile` directly, so no local build step is required:
+
+1. Render dashboard → New → Blueprint → select this repo.
+2. Set the env vars it prompts for: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `ALLOWED_ORIGINS` (your Vercel frontend URL, e.g. `https://agente-ai-amber.vercel.app`).
+3. Deploy. Render assigns a `PORT` automatically; the Dockerfile already
+   handles `${PORT:-8000}` expansion.
+
+To test the same Docker image locally instead:
 
 ```bash
 cd backend_spare
-railway up
-# or use Docker
 docker build -t agente-ai-backend .
-docker run -p 8000:8000 agente-ai-backend
+docker run -p 8000:8000 --env-file .env agente-ai-backend
 ```
 
 ---
