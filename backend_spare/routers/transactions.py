@@ -69,7 +69,8 @@ async def create_transaction(data: TransactionCreate, current: CurrentUser = Dep
         "input_method": "manual",
         "confidence_score": 1.0,
     }
-    return sb.table("transactions").insert(record).select().single().execute().data
+    result = sb.table("transactions").insert(record).execute()
+    return result.data[0]
 
 
 @router.delete("/{transaction_id}", status_code=204)

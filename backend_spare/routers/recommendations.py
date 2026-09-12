@@ -50,6 +50,6 @@ async def update_recommendation(
         sb.table("recommendations").update(updates)
         .eq("recommendation_id", recommendation_id)
         .eq("user_id", current.user_id)
-        .select().single().execute()
+        .execute()
     )
-    return result.data
+    return result.data[0]

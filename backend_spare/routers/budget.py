@@ -44,15 +44,17 @@ async def get_active(current: CurrentUser = Depends(get_current_user)):
 async def create_budget(data: BudgetCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     record = {"user_id": current.user_id, **data.model_dump(), "confidence_score": 0.8}
-    return sb.table("budgets").insert(record).select().single().execute().data
+    result = sb.table("budgets").insert(record).execute()
+    return result.data[0]
 
 
 @router.put("/{budget_id}")
 async def update_budget(budget_id: str, data: BudgetCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
-    return (
+    result = (
         sb.table("budgets").update(updates)
         .eq("budget_id", budget_id).eq("user_id", current.user_id)
-        .select().single().execute().data
+        .execute()
     )
+    return result.data[0]

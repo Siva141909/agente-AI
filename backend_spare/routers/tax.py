@@ -39,4 +39,5 @@ async def create_record(data: TaxRecordCreate, current: CurrentUser = Depends(ge
         "taxable_income": (data.gross_income or 0) - (data.total_deductions or 0),
         "tax_liability": 0,
     }
-    return sb.table("tax_records").insert(record).select().single().execute().data
+    result = sb.table("tax_records").insert(record).execute()
+    return result.data[0]

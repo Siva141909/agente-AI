@@ -38,4 +38,5 @@ async def list_applications(current: CurrentUser = Depends(get_current_user)):
 async def apply(data: ApplicationCreate, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
     record = {"user_id": current.user_id, **data.model_dump()}
-    return sb.table("user_scheme_applications").insert(record).select().single().execute().data
+    result = sb.table("user_scheme_applications").insert(record).execute()
+    return result.data[0]

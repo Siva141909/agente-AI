@@ -44,15 +44,17 @@ async def create_action(data: ActionCreate, current: CurrentUser = Depends(get_c
         "user_approved": False,
         "is_reversible": True,
     }
-    return sb.table("executed_actions").insert(record).select().single().execute().data
+    result = sb.table("executed_actions").insert(record).execute()
+    return result.data[0]
 
 
 @router.put("/{action_id}/complete")
 async def complete_action(action_id: str, current: CurrentUser = Depends(get_current_user)):
     sb = get_user_supabase(current.token)
-    return (
+    result = (
         sb.table("executed_actions")
         .update({"status": "completed", "user_approved": True})
         .eq("id", action_id).eq("user_id", current.user_id)
-        .select().single().execute().data
+        .execute()
     )
+    return result.data[0]

@@ -33,9 +33,9 @@ async def update_me(data: UserUpdate, current: CurrentUser = Depends(get_current
     updates["updated_at"] = datetime.utcnow().isoformat()
     result = (
         sb.table("users").update(updates)
-        .eq("user_id", current.user_id).select().single().execute()
+        .eq("user_id", current.user_id).execute()
     )
-    return result.data
+    return result.data[0]
 
 
 @router.get("/me/profile")
